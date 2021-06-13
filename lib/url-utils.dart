@@ -25,9 +25,9 @@ final validQueryDomains = Set<String>.from([
 final validPathDomains = RegExp(
     r"^https?:\/\/(youtu\.be\/|(www\.)?youtube.com\/(embed|v|shorts)\/)");
 String Function(String link) getURLVideoID = (link) {
-  final parsed = Uri(scheme: link);
+  final parsed = Uri.parse(link);
   var id = parsed.queryParameters['v'];
-  if (validPathDomains.hasMatch(link) && id != null) {
+  if (validPathDomains.hasMatch(link) && id == null) {
     final paths = parsed.path.split('/');
     id = paths[paths.length - 1];
   } else if (parsed.host != '' && !validQueryDomains.contains(parsed.host)) {
@@ -51,7 +51,7 @@ String Function(String link) getURLVideoID = (link) {
 /// @returns {string}
 /// @throws {Error} If unable to find a id
 /// @throws {TypeError} If videoid doesn't match specs
-final urlRegex = RegExp(r"^https?:\/\//");
+final urlRegex = RegExp(r"^https?:\/\/");
 String Function(String str) getVideoID = (str) {
   if (validateID(str)) {
     return str;

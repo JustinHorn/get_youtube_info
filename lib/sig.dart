@@ -17,12 +17,12 @@ var cache = Cache();
 /// @param {Object} options
 /// @returns {Promise<Array.<string>>}
 Future<List<String>> Function(String, Map<String,dynamic>) getTokens = (html5playerfile, options) => cache.getOrSet(html5playerfile, () async  {
-  const body = await exposedMiniget(html5playerfile, options).text();
-  const tokens = exports.extractActions(body);
+  final body = (await exposedMiniget(html5playerfile, options)).text();
+  final tokens = extractActions(body);
   if (!tokens || !tokens.length) {
-    throw Error('Could not extract signature deciphering actions');
+    throw 'Could not extract signature deciphering actions';
   }
-  exports.cache.set(html5playerfile, tokens);
+  cache.set(html5playerfile, tokens);
   return tokens;
 });
 

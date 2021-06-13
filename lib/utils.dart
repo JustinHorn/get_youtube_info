@@ -139,10 +139,10 @@ final String? Function(
 /// @param {Object} options an object with optional requestOptions and requestCallback parameters
 /// @param {Object} requestOptionsOverwrite overwrite of options.requestOptions
 /// @returns {miniget.Stream}
-dynamic Function(String url, Map<String, dynamic> options,
+Future<dynamic> Function(String url, Map<String, dynamic> options,
         Map<String, dynamic> requestOptions) exposedMiniget =
-    (url, options, requestOptionsOverwrite) {
-  final req = http
+    (url, options, requestOptionsOverwrite) async {
+  final req = await http
       .get(Uri.parse(url), headers: {...options, ...requestOptionsOverwrite});
 
   if (options['requestCallback'] is Function) options['requestCallback'](req);

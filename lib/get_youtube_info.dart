@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 part 'utils.dart';
 part 'url-utils.dart';
 part 'cache.dart';
-part 'sig.dart';
+//part 'sig.dart';
 
 // const PassThrough = require('stream').PassThrough;
 // const getInfo = require('./info');
