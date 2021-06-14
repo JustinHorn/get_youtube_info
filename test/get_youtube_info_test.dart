@@ -3,6 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get_youtube_info/get_youtube_info.dart';
 
 void main() {
+  group('utils ', () {
+    test('exposed miniget', () async {
+      final req = exposedMiniget('https://test.com/', options: {});
+      await req;
+    });
+  });
+
   group('url-utils', () {
     test('getVideoID', () {
       var id;
@@ -17,7 +24,8 @@ void main() {
       id = getVideoID('http://youtube.com/shorts/RAW_VIDEOID');
       expect(id, equals('RAW_VIDEOID'));
       id = getVideoID(
-          'https://music.youtube.com/watch?v=RAW_VIDEOID&list=RDAMVMmtLgabce8KQ');
+        'https://music.youtube.com/watch?v=RAW_VIDEOID&list=RDAMVMmtLgabce8KQ',
+      );
       expect(id, equals('RAW_VIDEOID'));
       id = getVideoID('https://gaming.youtube.com/watch?v=RAW_VIDEOID');
       expect(id, equals('RAW_VIDEOID'));

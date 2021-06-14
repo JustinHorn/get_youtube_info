@@ -133,21 +133,24 @@ final String? Function(
   return null;
 };
 
+const Map<String, dynamic> x = {};
+
 /// Does a miniget request and calls options.requestCallback if present
 ///
 /// @param {string} url the request url
 /// @param {Object} options an object with optional requestOptions and requestCallback parameters
 /// @param {Object} requestOptionsOverwrite overwrite of options.requestOptions
 /// @returns {miniget.Stream}
-Future<dynamic> Function(String url, Map<String, dynamic> options,
-        Map<String, dynamic> requestOptions) exposedMiniget =
-    (url, options, requestOptionsOverwrite) async {
+///
+Future<http.Response> exposedMiniget(String url,
+    {Map<String, dynamic> options = x,
+    Map<String, dynamic> requestOptionsOverwrite = x}) async {
   final req = await http
       .get(Uri.parse(url), headers: {...options, ...requestOptionsOverwrite});
 
   if (options['requestCallback'] is Function) options['requestCallback'](req);
   return req;
-};
+}
 
 /// Temporary helper to help deprecating a few properties.
 ///
