@@ -20,19 +20,17 @@ class Cache {
     return map[key];
   }
 
-  getOrSet(key, fn) {
+  Future<dynamic> getOrSet(key, fn) async {
     if (map.containsKey(key)) {
       return map[key];
     } else {
       var value = fn();
       map['key'] = value;
-      (() async {
-        try {
-          await value;
-        } catch (err) {
-          map.remove(key);
-        }
-      })();
+      try {
+        await value;
+      } catch (err) {
+        map.remove(key);
+      }
       return value;
     }
   }
