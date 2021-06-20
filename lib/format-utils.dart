@@ -1,5 +1,4 @@
-const utils = require('./utils');
-const FORMATS = require('./formats');
+part of get_youtube_info;
 
 
 // Use these to help sort formats, higher index is better.
@@ -21,62 +20,56 @@ const videoEncodingRanks = [
   'H.264',
 ];
 
-const getVideoBitrate = format => format.bitrate || 0;
-const getVideoEncodingRank = format =>
-  videoEncodingRanks.findIndex(enc => format.codecs && format.codecs.includes(enc));
-const getAudioBitrate = format => format.audioBitrate || 0;
-const getAudioEncodingRank = format =>
-  audioEncodingRanks.findIndex(enc => format.codecs && format.codecs.includes(enc));
+int getVideoBitrate(Map<String,dynamic> format) => format['bitrate'] ?? 0;
+String getVideoEncodingRank(format) => videoEncodingRanks.firstWhere((enc) => format['codecs'] && format['codecs'].includes(enc));
+int getAudioBitrate(Map<String,dynamic> format) => format['audioBitrate'] ?? 0;
+String getAudioEncodingRank(format) => audioEncodingRanks.firstWhere((enc) => format['codecs'] && format['codecs'].includes(enc));
 
 
-/**
- * Sort formats by a list of functions.
- *
- * @param {Object} a
- * @param {Object} b
- * @param {Array.<Function>} sortBy
- * @returns {number}
- */
-const sortFormatsBy = (a, b, sortBy) => {
-  let res = 0;
-  for (let fn of sortBy) {
+/// Sort formats by a list of functions.
+///
+/// @param {Object} a
+/// @param {Object} b
+/// @param {Array.<Function>} sortBy
+/// @returns {number}
+ sortFormatsBy(a, b, sortBy) {
+  var res = 0;
+  for (var fn in sortBy) {
     res = fn(b) - fn(a);
-    if (res !== 0) {
+    if (res != 0) {
       break;
     }
   }
   return res;
-};
+}
 
 
-const sortFormatsByVideo = (a, b) => sortFormatsBy(a, b, [
-  format => parseInt(format.qualityLabel),
+ int sortFormatsByVideo(a, b) => sortFormatsBy(a, b, [
+  (format) => int.parse(format.qualityLabel),
   getVideoBitrate,
   getVideoEncodingRank,
 ]);
 
 
-const sortFormatsByAudio = (a, b) => sortFormatsBy(a, b, [
+int sortFormatsByAudio(a, b) => sortFormatsBy(a, b, [
   getAudioBitrate,
   getAudioEncodingRank,
 ]);
 
 
-/**
- * Sort formats from highest quality to lowest.
- *
- * @param {Object} a
- * @param {Object} b
- * @returns {number}
- */
-exports.sortFormats = (a, b) => sortFormatsBy(a, b, [
+/// Sort formats from highest quality to lowest.
+///
+/// @param {Object} a
+/// @param {Object} b
+/// @returns {number}
+sortFormats(a, b) => sortFormatsBy(a, b, [
   // Formats with both video and audio are ranked highest.
-  format => +!!format.isHLS,
-  format => +!!format.isDashMPD,
-  format => +(format.contentLength > 0),
-  format => +(format.hasVideo && format.hasAudio),
-  format => +format.hasVideo,
-  format => parseInt(format.qualityLabel) || 0,
+  (format) => format['isHLS'] ? 1:0,
+  (format) => format['isDashMPD']? 1:0,
+  (format) => (format['contentLength'] > 0) ? 1:0,
+  (format) => (format['hasVideo'] && format['hasAudio'])? 1:0,
+  (format) => format['hasVideo']? 1:0,
+  (format) => int.parse(format['qualityLabel'] ?? '0'),
   getVideoBitrate,
   getAudioBitrate,
   getVideoEncodingRank,
@@ -84,34 +77,32 @@ exports.sortFormats = (a, b) => sortFormatsBy(a, b, [
 ]);
 
 
-/**
- * Choose a format depending on the given options.
- *
- * @param {Array.<Object>} formats
- * @param {Object} options
- * @returns {Object}
- * @throws {Error} when no format matches the filter/format rules
- */
-exports.chooseFormat = (formats, options) => {
-  if (typeof options.format === 'object') {
-    if (!options.format.url) {
-      throw Error('Invalid format given, did you use `ytdl.getInfo()`?');
+/// Choose a format depending on the given options.
+///
+/// @param {Array.<Object>} formats
+/// @param {Object} options
+/// @returns {Object}
+/// @throws {Error} when no format matches the filter/format rules
+chooseFormat(List<Map<String,dynamic>> formats, options)  {
+  if ( options['format'] is Map) {
+    if (!options['format']['url']) {
+      throw 'Invalid format given, did you use `ytdl.getInfo()`?';
     }
-    return options.format;
+    return options['format'];
   }
 
-  if (options.filter) {
-    formats = exports.filterFormats(formats, options.filter);
+  if (options['filter']) {
+    formats = filterFormats(formats, options['filter']);
   }
 
   // We currently only support HLS-Formats for livestreams
   // So we (now) remove all non-HLS streams
-  if (formats.some(fmt => fmt.isHLS)) {
-    formats = formats.filter(fmt => fmt.isHLS || !fmt.isLive);
+  if (formats.any((fmt) => fmt['isHLS'])) {
+    formats = formats.where((fmt) => fmt['isHLS'] ?? !fmt['isLive']).toList();
   }
 
-  let format;
-  const quality = options.quality || 'highest';
+  var format;
+  final quality = options['quality'] ?? 'highest';
   switch (quality) {
     case 'highest':
       format = formats[0];
@@ -122,30 +113,33 @@ exports.chooseFormat = (formats, options) => {
       break;
 
     case 'highestaudio': {
-      formats = exports.filterFormats(formats, 'audio');
+      formats = filterFormats(formats, 'audio');
       formats.sort(sortFormatsByAudio);
       // Filter for only the best audio format
-      const bestAudioFormat = formats[0];
-      formats = formats.filter(f => sortFormatsByAudio(bestAudioFormat, f) === 0);
+      final bestAudioFormat = formats[0];
+      formats = formats.where((f) => sortFormatsByAudio(bestAudioFormat, f) == 0).toList();
       // Check for the worst video quality for the best audio quality and pick according
       // This does not loose default sorting of video encoding and bitrate
-      const worstVideoQuality = formats.map(f => parseInt(f.qualityLabel) || 0).sort((a, b) => a - b)[0];
-      format = formats.find(f => (parseInt(f.qualityLabel) || 0) === worstVideoQuality);
+
+      final formatListCopy = [...formats.map((f) => int.parse((f['qualityLabel']?? '0'))).toList()];
+       formatListCopy.sort((a, b) => a - b);
+      final worstVideoQuality =formatListCopy[0];
+      format = formats.firstWhere((f) => int.parse(f['qualityLabel']?? '0') == worstVideoQuality);
       break;
     }
 
     case 'lowestaudio':
-      formats = exports.filterFormats(formats, 'audio');
+      formats = filterFormats(formats, 'audio');
       formats.sort(sortFormatsByAudio);
       format = formats[formats.length - 1];
       break;
 
     case 'highestvideo': {
-      formats = exports.filterFormats(formats, 'video');
+      formats = filterFormats(formats, 'video');
       formats.sort(sortFormatsByVideo);
       // Filter for only the best video format
       const bestVideoFormat = formats[0];
-      formats = formats.filter(f => sortFormatsByVideo(bestVideoFormat, f) === 0);
+      formats = formats.where((f) => sortFormatsByVideo(bestVideoFormat, f) === 0);
       // Check for the worst audio quality for the best video quality and pick according
       // This does not loose default sorting of audio encoding and bitrate
       const worstAudioQuality = formats.map(f => f.audioBitrate || 0).sort((a, b) => a - b)[0];
@@ -170,13 +164,11 @@ exports.chooseFormat = (formats, options) => {
   return format;
 };
 
-/**
- * Gets a format based on quality or array of quality's
- *
- * @param {string|[string]} quality
- * @param {[Object]} formats
- * @returns {Object}
- */
+/// Gets a format based on quality or array of quality's
+///
+/// @param {string|[string]} quality
+/// @param {[Object]} formats
+/// @returns {Object}
 const getFormatByQuality = (quality, formats) => {
   let getFormat = itag => formats.find(format => `${format.itag}` === `${itag}`);
   if (Array.isArray(quality)) {
@@ -187,64 +179,60 @@ const getFormatByQuality = (quality, formats) => {
 };
 
 
-/**
- * @param {Array.<Object>} formats
- * @param {Function} filter
- * @returns {Array.<Object>}
- */
-exports.filterFormats = (formats, filter) => {
-  let fn;
+/// @param {Array.<Object>} formats
+/// @param {Function} filter
+/// @returns {Array.<Object>}
+filterFormats(List<Map<String,dynamic>> formats, filter)  {
+  var fn;
   switch (filter) {
     case 'videoandaudio':
     case 'audioandvideo':
-      fn = format => format.hasVideo && format.hasAudio;
+      fn = (format) => format['hasVideo'] && format['hasAudio'];
       break;
 
     case 'video':
-      fn = format => format.hasVideo;
+      fn = (format) => format['hasVideo'];
       break;
 
     case 'videoonly':
-      fn = format => format.hasVideo && !format.hasAudio;
+      fn = (format) =>format['hasVideo'] && !format['hasAudio'];
       break;
 
     case 'audio':
-      fn = format => format.hasAudio;
+      fn = (format) =>format['hasAudio'];
       break;
 
     case 'audioonly':
-      fn = format => !format.hasVideo && format.hasAudio;
+      fn = (format) => !format['hasVideo'] &&format['hasAudio'];
       break;
 
     default:
-      if (typeof filter === 'function') {
+      if ( filter is Function) { // problem not correct
         fn = filter;
       } else {
-        throw TypeError(`Given filter (${filter}) is not supported`);
+        throw 'Given filter ($filter) is not supported';
       }
   }
-  return formats.filter(format => !!format.url && fn(format));
-};
+  return formats.where((format) => !!format['url'] && fn(format));
+}
 
 
-/**
- * @param {Object} format
- * @returns {Object}
- */
-exports.addFormatMeta = format => {
+/// @param {Object} format
+/// @returns {Object}
+addFormatMeta(Map<String,dynamic> format)  {
   format = Object.assign({}, FORMATS[format.itag], format);
-  format.hasVideo = !!format.qualityLabel;
-  format.hasAudio = !!format.audioBitrate;
-  format.container = format.mimeType ?
+  format['hasVideo'] = !!format.qualityLabel;
+  format['hasAudio'] = !!format.audioBitrate;
+  format['container'] = format.mimeType ?
     format.mimeType.split(';')[0].split('/')[1] : null;
-  format.codecs = format.mimeType ?
+  format['codecs'] = format.mimeType ?
     utils.between(format.mimeType, 'codecs="', '"') : null;
-  format.videoCodec = format.hasVideo && format.codecs ?
+  format['videoCodec'] = format.hasVideo && format.codecs ?
     format.codecs.split(', ')[0] : null;
-  format.audioCodec = format.hasAudio && format.codecs ?
+  format['audioCodec'] = format.hasAudio && format.codecs ?
     format.codecs.split(', ').slice(-1)[0] : null;
-  format.isLive = /\bsource[/=]yt_live_broadcast\b/.test(format.url);
-  format.isHLS = /\/manifest\/hls_(variant|playlist)\//.test(format.url);
-  format.isDashMPD = /\/manifest\/dash\//.test(format.url);
+  format['isLive'] = /\bsource[/=]yt_live_broadcast\b/.test(format.url);
+  format['isHLS'] = /\/manifest\/hls_(variant|playlist)\//.test(format.url);
+  format['isDashMPD'] = /\/manifest\/dash\//.test(format.url);
   return format;
 };

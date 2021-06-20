@@ -200,16 +200,19 @@ setDownloadURL(Map<String, dynamic> format, String sig) {
 
   // This is needed for a speedier download.
   // See https://github.com/fent/node-ytdl-core/issues/127
-  parsedUrl.queryParameters.addAll({'ratebypass': 'yes'});
+  final queryParameters = {...parsedUrl.queryParameters};
+  queryParameters.addAll({'ratebypass': 'yes'});
 
   if (sig != '') {
     // When YouTube provides a `sp` parameter the signature `sig` must go
     // into the parameter it specifies.
     // See https://github.com/fent/node-ytdl-core/issues/417
-    parsedUrl.queryParameters.addAll({(format['sp'] ?? 'signature'): sig});
+    queryParameters.addAll({(format['sp'] ?? 'signature'): sig});
   }
 
-  format['url'] = parsedUrl.toString();
+  format['url'] =
+      Uri.https(parsedUrl.authority, parsedUrl.path, queryParameters)
+          .toString();
 }
 
 /// Applies `sig.decipher()` to all format URL's.

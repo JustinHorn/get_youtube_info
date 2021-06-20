@@ -6,6 +6,8 @@ part 'utils.dart';
 part 'url-utils.dart';
 part 'cache.dart';
 part 'sig.dart';
+part 'formats.dart';
+part 'format-utils.dart';
 
 // const PassThrough = require('stream').PassThrough;
 // const getInfo = require('./info');
