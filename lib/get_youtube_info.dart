@@ -7,7 +7,17 @@ part 'url-utils.dart';
 part 'cache.dart';
 part 'sig.dart';
 part 'formats.dart';
-part 'format-utils.dart';
+part 'format_utils.dart';
+
+bool nodeIsTruthy(dynamic value) =>
+    value != 0 && value != '' && value != false && value != null;
+
+int? nodeParseInt(dynamic value) {
+  if (!(value is String)) return null;
+  var match = RegExp(r'^\d+').firstMatch(value);
+  if (match == null) return null;
+  return int.parse(match[0]!);
+}
 
 // const PassThrough = require('stream').PassThrough;
 // const getInfo = require('./info');

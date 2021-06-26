@@ -3,7 +3,7 @@ part of get_youtube_info;
 //*
 // 'http'://en.wikipedia.org/wiki/YouTube#Quality_and_formats
 //
-const formats = {
+const FORMATS = {
   '5': {
     'mimeType': 'video/flv; codecs="Sorenson H.283, mp3"',
     'qualityLabel': '240p',
