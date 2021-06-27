@@ -26,8 +26,8 @@ Map<String, dynamic>? getFormat(dynamic itag, formats) {
 }
 
 main() {
-  var results = getFormatByQuality('audioonly', formats);
-  print(formats);
+  var arr = 'abcdef';
+  print(arr.split('').last);
 }
 
 final formats = [

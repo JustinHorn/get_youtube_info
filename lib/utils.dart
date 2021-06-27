@@ -6,28 +6,28 @@ part of get_youtube_info;
 /// @param {string} left
 /// @param {string} right
 /// @returns {string}
-String Function(dynamic haystack, dynamic left, dynamic right) between =
+String Function(String haystack, dynamic left, dynamic right) between =
     (haystack, left, right) {
-  num pos = 0;
+  int pos = 0;
   if (left is RegExp) {
-    final match = haystack.match(left);
-    if (!match) {
+    final match = left.firstMatch(haystack);
+    if (!nodeIsTruthy(match)) {
       return '';
     }
-    pos = match.index + match[0].length;
+    pos = match!.start + match.group(0)!.length;
   } else {
     pos = haystack.indexOf(left);
     if (pos == -1) {
       return '';
     }
-    pos += left.length;
+    pos += (left as String).length;
   }
-  haystack = haystack.slice(pos);
+  haystack = haystack.substring(pos);
   pos = haystack.indexOf(right);
   if (pos == -1) {
     return '';
   }
-  haystack = haystack.slice(0, pos);
+  haystack = haystack.substring(0, pos);
   return haystack;
 };
 
@@ -72,7 +72,7 @@ final String Function(String mixedJson) cutAfterJSON = (mixedJson) {
     close = '}';
   }
 
-  if (!open) {
+  if (!nodeIsTruthy(open)) {
     throw "Can't cut unsupported JSON (need to begin with [ or { ) but got: ${mixedJson[0]}";
   }
 

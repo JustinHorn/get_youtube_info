@@ -251,13 +251,12 @@ var liveWithHLS = [
 ];
 
 main() {
-  group('sortFormats()', () {
-    var live_With_HLS = formats
-        .where((x) => x['isLive'] != null && x['isLive'] as bool)
-        .toList();
-    live_With_HLS.addAll(liveWithHLS);
+  var live_With_HLS =
+      formats.where((x) => x['isLive'] != null && x['isLive'] as bool).toList();
+  live_With_HLS.addAll(liveWithHLS);
 
-    final getItags = (format) => format['itag'];
+  final getItags = (format) => format['itag'];
+  group('sortFormats()', () {
     group('With `highest` given', () {
       test('Sorts available formats from highest to lowest quality', () async {
         final sortedFormats = [...formats];
@@ -286,131 +285,131 @@ main() {
     final sortedFormats = formats.sublist(0);
     sortedFormats.sort(sortFormats);
 
-    // group('with no options', () {
-    //   test('Chooses highest quality', () {
-    //     final format = chooseFormat(sortedFormats, {});
-    //     expect(format['itag'], equals('43'));
-    //   });
-    // });
+    group('with no options', () {
+      test('Chooses highest quality', () {
+        final format = chooseFormat(sortedFormats, {});
+        expect(format['itag'], equals('43'));
+      });
+    });
 
-    // group('With lowest quality wanted', () {
-    //   test('Chooses lowest itag', () {
-    //     final format = chooseFormat(sortedFormats, {'quality': 'lowest'});
-    //     expect(format['itag'], equals('138'));
-    //   });
-    // });
+    group('With lowest quality wanted', () {
+      test('Chooses lowest itag', () {
+        final format = chooseFormat(sortedFormats, {'quality': 'lowest'});
+        expect(format['itag'], equals('138'));
+      });
+    });
 
-    // group('With highest audio quality wanted', () {
-    //   test('Chooses highest audio itag', () {
-    //     final format = chooseFormat(formats, {'quality': 'highestaudio'});
-    //     expect(format['itag'], equals('43'));
-    //   });
+    group('With highest audio quality wanted', () {
+      test('Chooses highest audio itag', () {
+        final format = chooseFormat(formats, {'quality': 'highestaudio'});
+        expect(format['itag'], equals('43'));
+      });
 
-    //   group('and no formats passed', () {
-    //     test('throws the regular no such format found error', () {
-    //       expect(() => chooseFormat([], {'quality': 'highestaudio'}),
-    //           throwsA(contains('No such format found')));
-    //     });
-    //   });
+      group('and no formats passed', () {
+        test('throws the regular no such format found error', () {
+          expect(() => chooseFormat([], {'quality': 'highestaudio'}),
+              throwsA(contains('No such format found')));
+        });
+      });
 
-    //   group('and HLS formats are present', () {
-    //     test('Chooses highest audio itag', () {
-    //       final format = chooseFormat(liveWithHLS, {'quality': 'highestaudio'});
-    //       expect(format['itag'], equals('95'));
-    //     });
-    //   });
-    // });
+      group('and HLS formats are present', () {
+        test('Chooses highest audio itag', () {
+          final format = chooseFormat(liveWithHLS, {'quality': 'highestaudio'});
+          expect(format['itag'], equals('95'));
+        });
+      });
+    });
 
-    // group('With lowest audio quality wanted', () {
-    //   test('Chooses lowest audio itag', () {
-    //     final format = chooseFormat(formats, {'quality': 'lowestaudio'});
-    //     expect(format['itag'], '17');
-    //   });
+    group('With lowest audio quality wanted', () {
+      test('Chooses lowest audio itag', () {
+        final format = chooseFormat(formats, {'quality': 'lowestaudio'});
+        expect(format['itag'], '17');
+      });
 
-    //   group('and HLS formats are present', () {
-    //     test('Chooses lowest audio itag', () {
-    //       final format = chooseFormat(liveWithHLS, {'quality': 'lowestaudio'});
-    //       expect(format['itag'], equals('91'));
-    //     });
-    //   });
-    // });
+      group('and HLS formats are present', () {
+        test('Chooses lowest audio itag', () {
+          final format = chooseFormat(liveWithHLS, {'quality': 'lowestaudio'});
+          expect(format['itag'], equals('91'));
+        });
+      });
+    });
 
-    // group('With highest video quality wanted', () {
-    //   test('Chooses highest video itag', () {
-    //     final format = chooseFormat(formats, {'quality': 'highestvideo'});
-    //     expect(format['itag'], equals('18'));
-    //   });
+    group('With highest video quality wanted', () {
+      test('Chooses highest video itag', () {
+        final format = chooseFormat(formats, {'quality': 'highestvideo'});
+        expect(format['itag'], equals('18'));
+      });
 
-    //   group('and no formats passed', () {
-    //     test('throws the regular no such format found error', () {
-    //       expect(() => chooseFormat([], {'quality': 'highestvideo'}),
-    //           throwsA(contains('No such format found')));
-    //     });
-    //   });
+      group('and no formats passed', () {
+        test('throws the regular no such format found error', () {
+          expect(() => chooseFormat([], {'quality': 'highestvideo'}),
+              throwsA(contains('No such format found')));
+        });
+      });
 
-    //   group('and HLS formats are present', () {
-    //     test('Chooses highest video itag', () {
-    //       final format = chooseFormat(liveWithHLS, {'quality': 'highestvideo'});
-    //       expect(format['itag'], equals('96.worse.audio'));
-    //     });
-    //   });
-    // });
+      group('and HLS formats are present', () {
+        test('Chooses highest video itag', () {
+          final format = chooseFormat(liveWithHLS, {'quality': 'highestvideo'});
+          expect(format['itag'], equals('96.worse.audio'));
+        });
+      });
+    });
 
-    // group('With lowest video quality wanted', () {
-    //   test('Chooses lowest video itag', () {
-    //     final format = chooseFormat(formats, {'quality': 'lowestvideo'});
-    //     expect(format['itag'], '17');
-    //   });
+    group('With lowest video quality wanted', () {
+      test('Chooses lowest video itag', () {
+        final format = chooseFormat(formats, {'quality': 'lowestvideo'});
+        expect(format['itag'], '17');
+      });
 
-    //   group('and HLS formats are present', () {
-    //     test('Chooses lowest audio itag', () {
-    //       final format = chooseFormat(liveWithHLS, {'quality': 'lowestvideo'});
-    //       expect(format['itag'], equals('91'));
-    //     });
-    //   });
-    // });
+      group('and HLS formats are present', () {
+        test('Chooses lowest audio itag', () {
+          final format = chooseFormat(liveWithHLS, {'quality': 'lowestvideo'});
+          expect(format['itag'], equals('91'));
+        });
+      });
+    });
 
-    // group('With itag given', () {
-    //   test('Chooses matching format', () {
-    //     final format = chooseFormat(sortedFormats, {'quality': 5});
-    //     expect(format['itag'], equals('5'));
-    //   });
+    group('With itag given', () {
+      test('Chooses matching format', () {
+        final format = chooseFormat(sortedFormats, {'quality': 5});
+        expect(format['itag'], equals('5'));
+      });
 
-    //   group('that is not in the format list', () {
-    //     test('Returns an error', () {
-    //       expect(() => chooseFormat(sortedFormats, {'quality': 42}),
-    //           throwsA(contains(r'No such format found: ')));
-    //     });
-    //   });
-    // });
+      group('that is not in the format list', () {
+        test('Returns an error', () {
+          expect(() => chooseFormat(sortedFormats, {'quality': 42}),
+              throwsA(contains(r'No such format found: ')));
+        });
+      });
+    });
 
-    // group('With list of itags given', () {
-    //   test('Chooses matching format', () {
-    //     final format = chooseFormat(sortedFormats, {
-    //       'quality': [99, 160, 18]
-    //     });
-    //     expect(format['itag'], '160');
-    //   });
-    // });
+    group('With list of itags given', () {
+      test('Chooses matching format', () {
+        final format = chooseFormat(sortedFormats, {
+          'quality': [99, 160, 18]
+        });
+        expect(format['itag'], '160');
+      });
+    });
 
-    // group('With format object given', () {
-    //   test('Chooses given format without searching', () {
-    //     final format = chooseFormat(sortedFormats, {'format': formats[0]});
-    //     expect(format, equals(formats[0]));
-    //   });
+    group('With format object given', () {
+      test('Chooses given format without searching', () {
+        final format = chooseFormat(sortedFormats, {'format': formats[0]});
+        expect(format, equals(formats[0]));
+      });
 
-    //   group('from `getBasicInfo()`', () {
-    //     test('Throws error', () {
-    //       expect(
-    //           () => chooseFormat(sortedFormats, {
-    //                 'format': formats
-    //                     .where((format) => !nodeIsTruthy(format['url']))
-    //                     .toList()[0]
-    //               }),
-    //           throwsA(contains('Invalid format given')));
-    //     });
-    //   });
-    // });
+      group('from `getBasicInfo()`', () {
+        test('Throws error', () {
+          expect(
+              () => chooseFormat(sortedFormats, {
+                    'format': formats
+                        .where((format) => !nodeIsTruthy(format['url']))
+                        .toList()[0]
+                  }),
+              throwsA(contains('Invalid format given')));
+        });
+      });
+    });
 
     group('With filter given', () {
       group('that matches a format', () {
@@ -439,126 +438,127 @@ main() {
       });
     });
   });
+
+  group('filterFormats', () {
+    test('Tries to find formats that match', () {
+      final filter = (format) => format['container'] == 'mp4';
+      final itags = filterFormats(formats, filter).map(getItags);
+      expect(itags, equals(['18', '19', '133', '160', '140', '138']));
+    });
+
+    test('Ignores formats without a `url`', () {
+      final itags = filterFormats(formats, () => true).map(getItags);
+      expect(
+          itags,
+          equals(
+              ['18', '19', '43', '133', '36', '5', '160', '17', '140', '138']));
+    });
+
+    group('that doesn\'t match any format', () {
+      test('Returns an empty list', () {
+        final list = filterFormats(formats, () => false);
+        expect(list.length, equals(0));
+      });
+    });
+
+    group('With `video` given', () {
+      test('Returns only matching formats', () {
+        final itags = filterFormats(formats, 'video').map(getItags);
+        expect(itags, equals(['18', '43', '133', '36', '5', '160', '17']));
+      });
+    });
+
+    group('With `videoonly` given', () {
+      test('Returns only matching formats', () {
+        final itags = filterFormats(formats, 'videoonly').map(getItags);
+        expect(itags, equals(['133', '160']));
+      });
+    });
+
+    group('With `audio` given', () {
+      test('Returns only matching formats', () {
+        final itags = filterFormats(formats, 'audio').map(getItags);
+        expect(itags, equals(['18', '19', '43', '36', '5', '17', '140']));
+      });
+    });
+
+    group('With `audioonly` given', () {
+      test('Returns only matching formats', () {
+        final itags = filterFormats(formats, 'audioonly').map(getItags);
+        expect(itags, equals(['19', '140']));
+      });
+    });
+
+    group('With `audioandvideo` given', () {
+      test('Returns only matching formats', () {
+        final itags = filterFormats(formats, 'audioandvideo').map(getItags);
+        expect(itags, equals(['18', '43', '36', '5', '17']));
+      });
+    });
+
+    group('With `videoandaudio` given', () {
+      test('Returns only matching formats', () {
+        final itags = filterFormats(formats, 'videoandaudio').map(getItags);
+        expect(itags, equals(['18', '43', '36', '5', '17']));
+      });
+    });
+
+    group('With unsupported filter given', () {
+      test('Returns only matching formats', () {
+        expect(() => filterFormats(formats, 'aaaa').map(getItags),
+            throwsA(contains('not supported')));
+      });
+    });
+  });
+
+  group('addFormatMeta()', () {
+    test('Adds extra metadata to a format', () {
+      var format = addFormatMeta({
+        'itag': 94,
+        'url': 'http://video.com/1/2.ts',
+      });
+      expect(
+          format,
+          equals({
+            'itag': 94,
+            'url': 'http://video.com/1/2.ts',
+            'mimeType': 'video/ts; codecs="H.264, aac"',
+            'container': 'ts',
+            'codecs': 'H.264, aac',
+            'videoCodec': 'H.264',
+            'audioCodec': 'aac',
+            'qualityLabel': '480p',
+            'bitrate': 800000,
+            'audioBitrate': 128,
+            'isLive': false,
+            'isHLS': false,
+            'isDashMPD': false,
+            'hasVideo': true,
+            'hasAudio': true,
+          }));
+    });
+    group('With an unknown itag', () {
+      test('Does not add extra metadata to a format', () {
+        var format = addFormatMeta({
+          'itag': -1,
+          'url': 'http://video.com/3/4.ts',
+        });
+        expect(
+            format,
+            equals({
+              'itag': -1,
+              'url': 'http://video.com/3/4.ts',
+              'container': null,
+              'codecs': null,
+              'videoCodec': null,
+              'audioCodec': null,
+              'isLive': false,
+              'isHLS': false,
+              'isDashMPD': false,
+              'hasVideo': false,
+              'hasAudio': false,
+            }));
+      });
+    });
+  });
 }
-
-// group('filterFormats', () => {
-//   test('Tries to find formats that match', () => {
-//     const filter = format => format.container === 'mp4';
-//     const itags = filterFormats(formats, filter).map(getItags);
-//     assert.deepEqual(itags, ['18', '19', '133', '160', '140', '138']);
-//   });
-
-//   test('Ignores formats without a `url`', () => {
-//     const itags = filterFormats(formats, () => true).map(getItags);
-//     assert.deepEqual(itags, ['18', '19', '43', '133', '36', '5', '160', '17', '140', '138']);
-//   });
-
-//   test('Is exposed in module', () => {
-//     assert.strictEqual(ytdl.filterFormats, filterFormats);
-//   });
-
-//   group('that doesn\'t match any format', () => {
-//     test('Returns an empty list', () => {
-//       const list = filterFormats(formats, () => false);
-//       assert.strictEqual(list.length, 0);
-//     });
-//   });
-
-//   group('With `video` given', () => {
-//     test('Returns only matching formats', () => {
-//       const itags = filterFormats(formats, 'video').map(getItags);
-//       assert.deepEqual(itags, ['18', '43', '133', '36', '5', '160', '17']);
-//     });
-//   });
-
-//   group('With `videoonly` given', () => {
-//     test('Returns only matching formats', () => {
-//       const itags = filterFormats(formats, 'videoonly').map(getItags);
-//       assert.deepEqual(itags, ['133', '160']);
-//     });
-//   });
-
-//   group('With `audio` given', () => {
-//     test('Returns only matching formats', () => {
-//       const itags = filterFormats(formats, 'audio').map(getItags);
-//       assert.deepEqual(itags, ['18', '19', '43', '36', '5', '17', '140']);
-//     });
-//   });
-
-//   group('With `audioonly` given', () => {
-//     test('Returns only matching formats', () => {
-//       const itags = filterFormats(formats, 'audioonly').map(getItags);
-//       assert.deepEqual(itags, ['19', '140']);
-//     });
-//   });
-
-//   group('With `audioandvideo` given', () => {
-//     test('Returns only matching formats', () => {
-//       const itags = filterFormats(formats, 'audioandvideo').map(getItags);
-//       assert.deepEqual(itags, ['18', '43', '36', '5', '17']);
-//     });
-//   });
-
-//   group('With `videoandaudio` given', () => {
-//     test('Returns only matching formats', () => {
-//       const itags = filterFormats(formats, 'videoandaudio').map(getItags);
-//       assert.deepEqual(itags, ['18', '43', '36', '5', '17']);
-//     });
-//   });
-
-//   group('With unsupported filter given', () => {
-//     test('Returns only matching formats', () => {
-//       assert.throws(() => {
-//         filterFormats(formats, 'aaaa').map(getItags);
-//       }, /not supported/);
-//     });
-//   });
-// });
-
-
-// group('addFormatMeta()', () => {
-//   test('Adds extra metadata to a format', () => {
-//     let format = addFormatMeta({
-//       itag: 94,
-//       url: 'http://video.com/1/2.ts',
-//     });
-//     assert.deepEqual(format, {
-//       itag: 94,
-//       url: 'http://video.com/1/2.ts',
-//       mimeType: 'video/ts; codecs="H.264, aac"',
-//       container: 'ts',
-//       codecs: 'H.264, aac',
-//       videoCodec: 'H.264',
-//       audioCodec: 'aac',
-//       qualityLabel: '480p',
-//       bitrate: 800000,
-//       audioBitrate: 128,
-//       isLive: false,
-//       isHLS: false,
-//       isDashMPD: false,
-//       hasVideo: true,
-//       hasAudio: true,
-//     });
-//   });
-//   group('With an unknown itag', () => {
-//     test('Does not add extra metadata to a format', () => {
-//       let format = addFormatMeta({
-//         itag: -1,
-//         url: 'http://video.com/3/4.ts',
-//       });
-//       assert.deepEqual(format, {
-//         itag: -1,
-//         url: 'http://video.com/3/4.ts',
-//         container: null,
-//         codecs: null,
-//         videoCodec: null,
-//         audioCodec: null,
-//         isLive: false,
-//         isHLS: false,
-//         isDashMPD: false,
-//         hasVideo: false,
-//         hasAudio: false,
-//       });
-//     });
-//   });
-// });

@@ -120,14 +120,12 @@ chooseFormat(List<Map<String, dynamic>> formats, options) {
         formats = filterFormats(formats, 'audio');
         formats.sort(sortFormatsByAudio);
         // Filter for only the best audio format
-        // print(formats);
         final bestAudioFormat = formats[0];
         formats = formats
             .where((f) => sortFormatsByAudio(bestAudioFormat, f) == 0)
             .toList();
         // Check for the worst video quality for the best audio quality and pick according
         // This does not loose default sorting of video encoding and bitrate
-        // print(formats);
 
         final formatListCopy = [
           ...formats.map((f) => nodeParseInt(f['qualityLabel']) ?? 0).toList()
@@ -136,7 +134,6 @@ chooseFormat(List<Map<String, dynamic>> formats, options) {
         final worstVideoQuality = formatListCopy[0];
         format = formats.firstWhere(
             (f) => (nodeParseInt(f['qualityLabel']) ?? 0) == worstVideoQuality);
-        print(format);
         break;
       }
 
@@ -246,8 +243,8 @@ List<Map<String, dynamic>> filterFormats(
       }
   }
 
+  final type = () => true;
   if (filter.runtimeType.toString() == type.runtimeType.toString()) {
-    print('wtf');
     return formats.where((format) => format['url'] != null && fn()).toList();
   }
 
@@ -259,20 +256,21 @@ List<Map<String, dynamic>> filterFormats(
 /// @param {Object} format
 /// @returns {Object}
 addFormatMeta(Map<String, dynamic> format) {
-  format = {...FORMATS[format['itag']!]!, ...format};
-  format['hasVideo'] = !!format['qualityLabel'];
-  format['hasAudio'] = !!format['audioBitrate'];
+  format = {...?FORMATS[format['itag']?.toString()], ...format};
+  format['hasVideo'] = nodeIsTruthy(format['qualityLabel']);
+  format['hasAudio'] = nodeIsTruthy(format['audioBitrate']);
   format['container'] = format['mimeType'] != null
-      ? format['mimeType'].split(';')[0].split('/')[1]
+      ? format['mimeType'].split(';').first.split('/')[1]
       : null;
-  format['codecs'] = format['mimeType'] != null
+  format['codecs'] = nodeIsTruthy(format['mimeType'])
       ? between(format['mimeType'], 'codecs="', '"')
       : null;
-  format['videoCodec'] = format['hasVideo'] && format['codecs']
-      ? format['codecs'].split(', ')[0]
-      : null;
-  format['audioCodec'] = format['hasAudio'] && format['codecs']
-      ? format['codecs'].split(', ').slice(-1)[0]
+  format['videoCodec'] =
+      nodeIsTruthy(format['hasVideo']) && nodeIsTruthy(format['codecs'])
+          ? format['codecs'].split(', ').first
+          : null;
+  format['audioCodec'] = (format['hasAudio'] && nodeIsTruthy(format['codecs']))
+      ? (format['codecs'] as String).split(', ').last
       : null;
   format['isLive'] =
       RegExp('\bsource[/=]yt_live_broadcast\b').hasMatch(format['url']);
