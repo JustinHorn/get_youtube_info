@@ -1,6 +1,7 @@
 library get_youtube_info;
 
 import 'package:http/http.dart' as http;
+import 'dart:core';
 
 part 'utils.dart';
 part 'url-utils.dart';
@@ -8,6 +9,7 @@ part 'cache.dart';
 part 'sig.dart';
 part 'formats.dart';
 part 'format_utils.dart';
+part 'info_extras.dart';
 
 bool nodeIsTruthy(dynamic value) =>
     value != 0 && value != '' && value != false && value != null;
@@ -18,6 +20,53 @@ int? nodeParseInt(dynamic value) {
   if (match == null) return null;
   return int.parse(match[0]!);
 }
+
+dynamic nodeOr(
+  dynamic a,
+  dynamic b,
+) {
+  if (nodeIsTruthy(a)) return a;
+  return b;
+}
+
+String nodeURL(String url, String base_url) {
+  if (RegExp(r'(^/|(?!http)\w|^\d)').hasMatch(url)) {
+    // is relative path
+    if (RegExp(r'^/').hasMatch(url)) return base_url + url.substring(1);
+    return base_url + url;
+  }
+  return url;
+}
+
+class QueryString {
+  static Map<String, dynamic> parse(String query) {
+    var search = new RegExp('([^&=]+)=?([^&]*)');
+    var result = new Map<String, dynamic>();
+
+    // Get rid off the beginning ? in query strings.
+    if (query.startsWith('?')) query = query.substring(1);
+
+    // A custom decoder.
+    decode(String s) => Uri.decodeComponent(s.replaceAll('+', ' '));
+
+    // Go through all the matches and build the result map.
+    for (Match match in search.allMatches(query)) {
+      result[decode(match.group(1)!)] = decode(match.group(2)!);
+    }
+
+    return result;
+  }
+}
+
+extension IndexedIterable<E> on Iterable<E> {
+  Iterable<T> mapIndexed<T>(T Function(E e, int i) f) {
+    var i = 0;
+    return map((e) => f(e, i++));
+  }
+}
+
+
+
 
 // const PassThrough = require('stream').PassThrough;
 // const getInfo = require('./info');
