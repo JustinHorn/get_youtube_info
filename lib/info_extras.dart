@@ -130,14 +130,15 @@ getAuthor(Map<String, dynamic> info) {
         videoOwnerRenderer['navigationEndpoint']['browseEndpoint']['browseId'];
     thumbnails = (videoOwnerRenderer['thumbnail']['thumbnails'] as List)
         .map((thumbnail) {
-      thumbnail.url = nodeURL(thumbnail.url, BASE_URL);
+      thumbnail['url'] = nodeURL(thumbnail['url'], BASE_URL);
       return thumbnail;
     }).toList();
-    subscriberCount =
-        parseAbbreviatedNumber(getText(videoOwnerRenderer.subscriberCountText));
-    verified = isVerified(videoOwnerRenderer.badges);
+    subscriberCount = parseAbbreviatedNumber(
+        getText(videoOwnerRenderer['subscriberCountText']));
+    verified = isVerified(videoOwnerRenderer['badges']);
   } catch (err) {
     // Do nothing.
+    print(err);
   }
   try {
     var videoDetails =
@@ -164,8 +165,8 @@ getAuthor(Map<String, dynamic> info) {
       'subscriber_count': subscriberCount,
     };
     if (nodeIsTruthy(thumbnails.length)) {
-      deprecate(author, 'avatar', author['thumbnails'].first['url'],
-          'author.avatar', 'author.thumbnails[0].url');
+      // deprecate(author, 'avatar', author['thumbnails'].first['url'],
+      //     'author.avatar', 'author.thumbnails[0].url');
     }
     return author;
   } catch (err) {
