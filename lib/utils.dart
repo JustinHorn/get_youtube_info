@@ -42,9 +42,9 @@ num? Function(String string) parseAbbreviatedNumber = (string) {
   if (match.isNotEmpty) {
     var iter = match.iterator;
     iter.moveNext();
-    var number = double.parse(iter.current.toString());
-    iter.moveNext();
-    var multi = iter.current.toString();
+    var number = nodeParseDouble(iter.current.group(1))!;
+
+    var multi = iter.current.group(2);
     return (multi == 'M'
             ? number * 1000000
             : multi == 'K'

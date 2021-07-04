@@ -34,7 +34,7 @@ assertUserName(str) {
 
 assertUserURL(url) {
   expect(
-      RegExp(r'^https?:\/\/www\.youtube\.com\/(user|channel)\/[a-zA-Z0-9_-]+$')
+      RegExp(r'^https?://www\.youtube\.com/(user|channel)/[a-zA-Z0-9_-]+$')
           .hasMatch(url),
       true,
       reason: 'Not a user URL: ${url}');
@@ -44,8 +44,8 @@ assertThumbnails(thumbnails) {
   expect(thumbnails is List, true);
   for (var thumbnail in thumbnails) {
     assertURL(thumbnail['url']);
-    expect(thumbnail['width'].runtimeType, 'int');
-    expect(thumbnail['height'].runtimeType, 'int');
+    expect(thumbnail['width'].runtimeType, 1.runtimeType);
+    expect(thumbnail['height'].runtimeType, 1.runtimeType);
   }
 }
 
@@ -118,8 +118,8 @@ main() {
       assertUserName(author['user']);
       expect(nodeIsTruthy(author['name']), true);
       assertUserURL(author['user_url']);
-      expect(author['verified'].runtimeType, 'boolean');
-      expect(author['subscriber_count'].runtimeType, 'int');
+      expect(author['verified'].runtimeType, true.runtimeType);
+      expect(author['subscriber_count'].runtimeType, 1.runtimeType);
     });
 
 //   group('watch page without `playerMicroformatRenderer`', () {

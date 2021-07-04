@@ -143,21 +143,24 @@ getAuthor(Map<String, dynamic> info) {
   try {
     var videoDetails =
         info['player_response']['microformat']?['playerMicroformatRenderer'];
-    var id = nodeOr(nodeOr(videoDetails?['channelId'], channelId),
-        info['player_response']['videoDetails']['channelId']);
+    var id = (nodeOr(nodeOr(videoDetails?['channelId'], channelId),
+        info['player_response']['videoDetails']['channelId']));
+
+    var videoDetailsExist = nodeIsTruthy(videoDetails);
+
     Map<String, dynamic> author = {
       'id': id,
-      'name': videoDetails
+      'name': videoDetailsExist
           ? videoDetails['ownerChannelName']
           : info['player_response']['videoDetails']['author'],
-      'user': videoDetails
-          ? videoDetails['ownerProfileUrl'].split('/').slice(-1)[0]
+      'user': videoDetailsExist
+          ? videoDetails['ownerProfileUrl'].split('/').last
           : null,
       'channel_url': 'https://www.youtube.com/channel/$id',
-      'external_channel_url': videoDetails
+      'external_channel_url': videoDetailsExist
           ? 'https://www.youtube.com/channel/${videoDetails['externalChannelId']}'
           : '',
-      'user_url': videoDetails
+      'user_url': videoDetailsExist
           ? nodeURL(videoDetails['ownerProfileUrl'], BASE_URL).toString()
           : '',
       'thumbnails': thumbnails,
@@ -165,7 +168,8 @@ getAuthor(Map<String, dynamic> info) {
       'subscriber_count': subscriberCount,
     };
     if (nodeIsTruthy(thumbnails.length)) {
-      // deprecate(author, 'avatar', author['thumbnails'].first['url'],
+      author['avatar'] = author['thumbnails'].first['url'];
+      // deprecate(autho['avatar'] = author['thumbnails'].first['url'],
       //     'author.avatar', 'author.thumbnails[0].url');
     }
     return author;

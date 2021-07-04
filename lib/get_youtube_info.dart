@@ -21,6 +21,13 @@ int? nodeParseInt(dynamic value) {
   return int.parse(match[0]!);
 }
 
+double? nodeParseDouble(dynamic value) {
+  if (!(value is String)) return null;
+  var match = RegExp(r'^\d+(\.\d+)?').firstMatch(value);
+  if (match == null) return null;
+  return double.parse(match[0]!);
+}
+
 dynamic nodeOr(
   dynamic a,
   dynamic b,
@@ -30,7 +37,7 @@ dynamic nodeOr(
 }
 
 String nodeURL(String url, String base_url) {
-  if (RegExp(r'(^/|(?!http)\w|^\d)').hasMatch(url)) {
+  if (RegExp(r'(^/|^(?!h?t?t?p)\w|^\d)').hasMatch(url)) {
     // is relative path
     if (RegExp(r'^/').hasMatch(url)) return base_url + url.substring(1);
     return base_url + url;
