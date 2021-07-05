@@ -10,6 +10,9 @@ import 'dart:io';
 import 'package:get_youtube_info/get_youtube_info.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+expectOk(dynamic x) => expect(nodeIsTruthy(x), true);
+expectNotOk(dynamic x) => expect(nodeIsTruthy(x), false);
+
 assertURL(url) {
   expect(RegExp('^https?://').hasMatch(url), true, reason: 'Not a URL: ${url}');
 }
@@ -62,10 +65,10 @@ assertRelatedVideos(relatedVideos, {assertRichThumbnails = false}) {
       assertThumbnails(video['richThumbnails']);
     }
     expect(video['isLive'].runtimeType, 'boolean');
-    expect(RegExp('[a-zA-Z]+').hasMatch(video['author']), true);
-    expect(nodeIsTruthy(video['author']?['id']), true);
-    expect(nodeIsTruthy(video['author']?['name']), true);
-    expect(nodeIsTruthy(video['author']?['channel_url']), true);
+    expectOk(RegExp('[a-zA-Z]+').hasMatch(video['author']));
+    expectOk(nodeIsTruthy(video['author']?['id']));
+    expectOk(nodeIsTruthy(video['author']?['name']));
+    expectOk(nodeIsTruthy(video['author']?['channel_url']));
     assertThumbnails(video['author']['thumbnails']);
     expect(video['author']?['verified']?.runtimeType, 'boolean');
   }
@@ -82,9 +85,9 @@ Future<Map<String, dynamic>> getFileAsMap(String path) async {
   return html5player;
 }
 
-infoFromWatchJSON(type, transformBody) async {
+Future<dynamic> infoFromWatchJSON(type, transformBody) async {
   var watchObj;
-  if (transformBody) {
+  if (nodeIsTruthy(transformBody)) {
     var watchJSON =
         await getFileString('./test/files/videos/${type}/watch.json');
     watchJSON = transformBody(watchJSON);
@@ -99,104 +102,118 @@ infoFromWatchJSON(type, transformBody) async {
   return info;
 }
 
-main() {
-  group('extras.getAuthor()', () {
-    // To remove later.
-    setUp(() {});
-    tearDown(() {});
+// extend expect with is okay function!
 
-    test('Returns video author object', () async {
-      final info =
-          await getFileAsMap('./test/files/videos/regular/expected-info.json');
-      final author = getAuthor(info);
-      expect(nodeIsTruthy(author), true);
-      assertURL(author['avatar']);
-      assertThumbnails(author['thumbnails']);
-      assertChannelURL(author['channel_url']);
-      assertChannelURL(author['external_channel_url']);
-      assertUserID(author['id']);
-      assertUserName(author['user']);
-      expect(nodeIsTruthy(author['name']), true);
-      assertUserURL(author['user_url']);
-      expect(author['verified'].runtimeType, true.runtimeType);
-      expect(author['subscriber_count'].runtimeType, 1.runtimeType);
+main() {
+  // group('extras.getAuthor()', () {
+  //   // To remove later.
+  //   setUp(() {});
+  //   tearDown(() {});
+
+  //   test('Returns video author object', () async {
+  //     final info =
+  //         await getFileAsMap('./test/files/videos/regular/expected-info.json');
+  //     final author = getAuthor(info);
+  //     expect(nodeIsTruthy(author), true);
+  //     assertURL(author['avatar']);
+  //     assertThumbnails(author['thumbnails']);
+  //     assertChannelURL(author['channel_url']);
+  //     assertChannelURL(author['external_channel_url']);
+  //     assertUserID(author['id']);
+  //     assertUserName(author['user']);
+  //     expect(nodeIsTruthy(author['name']), true);
+  //     assertUserURL(author['user_url']);
+  //     expect(author['verified'].runtimeType, true.runtimeType);
+  //     expect(author['subscriber_count'].runtimeType, 1.runtimeType);
+  //   });
+
+  //   group('watch page without `playerMicroformatRenderer`', () {
+  //     test('Uses backup author from `videoDetails`', () async {
+  //       final _info = await infoFromWatchJSON('regular',
+  //           (body) => body.replaceAll('playerMicroformatRenderer', ''));
+
+  //       final info = Map<String, dynamic>.from(_info);
+  //       final author = getAuthor(info);
+  //       expect(nodeIsTruthy(author), true);
+  //       expect(nodeIsTruthy(author['name']), true);
+  //       assertChannelURL(author['channel_url']);
+  //       assertThumbnails(author['thumbnails']);
+  //       expect(author['verified'].runtimeType, true.runtimeType);
+  //       expect(author['subscriber_count'].runtimeType, 1.runtimeType);
+  //     });
+  //   });
+
+  //   group('watch page without `playerMicroformatRenderer` or `videoDetails`',
+  //       () {
+  //     test('Returns empty author object', () async {
+  //       final _info = await infoFromWatchJSON(
+  //           'regular',
+  //           (body) => body
+  //               .replaceAll('playerMicroformatRenderer', '')
+  //               .replaceAll('videoDetails', ''));
+  //       _info['player_response'] =
+  //           nodeOr(_info['player_response'], _info['playerResponse']);
+  //       final info = Map<String, dynamic>.from(_info);
+  //       final author = getAuthor(info);
+  //       expect(author, equals({}));
+  //     });
+  //   });
+
+  //   group('from a rental', () {
+  //     test('Returns video author object', () async {
+  //       final info =
+  //           await getFileAsMap('./test/files/videos/rental/expected-info.json');
+  //       final author = getAuthor(info);
+  //       expect(nodeIsTruthy(author), true);
+  //       assertURL(author['avatar']);
+  //       assertThumbnails(author['thumbnails']);
+  //       assertChannelURL(author['channel_url']);
+  //       assertChannelURL(author['external_channel_url']);
+  //       assertUserID(author['id']);
+  //       assertUserName(author['user']);
+  //       expect(nodeIsTruthy(author['name']), true);
+  //       assertUserURL(author['user_url']);
+  //       expect(author['verified'].runtimeType, true.runtimeType);
+  //       expect(nodeIsTruthy(author['subscriber_count']), false);
+  //     });
+  //   });
+  // });
+
+  group('extras.getMedia()', () {
+    // test('Returns media object', () async {
+    //   final _info =
+    //       await getFileAsMap('./test/files/videos/music/expected-info.json');
+    //   final info = Map<String, dynamic>.from(_info);
+    //   final media = getMedia(info);
+    //   expectOk(media);
+    //   expect(media['artist'], 'Syn Cole');
+    //   assertChannelURL(media['artist_url']);
+    //   expect(media['category'], 'Music');
+    //   assertURL(media['category_url']);
+    // });
+
+    group('On a video associated with a game', () {
+      test('Returns media object', () async {
+        final info =
+            await getFileAsMap('./test/files/videos/game/expected-info.json');
+        final media = getMedia(info);
+        expectOk(media);
+        expect(media['category'], 'Gaming');
+        assertURL(media['category_url']);
+        expect(media['game'], 'Pokémon Snap');
+        assertURL(media['game_url']);
+        expect(media['year'], '1999');
+      });
     });
 
-//   group('watch page without `playerMicroformatRenderer`', () {
-//     test('Uses backup author from `videoDetails`', () {
-//       final info = infoFromWatchJSON('regular', body => body.replace('playerMicroformatRenderer', ''));
-//       final author = extras.getAuthor(info);
-//       expect(author);
-//       expect(author['name']);
-//       assertChannelURL(author['channel_url']);
-//       assertThumbnails(author['thumbnails']);
-//       expect(author['verified']);
-//       expect(author['subscriber_count']);
-//     });
-//   });
-
-//   group('watch page without `playerMicroformatRenderer` or `videoDetails`', () {
-//     test('Returns empty author object', () {
-//       final info = infoFromWatchJSON('regular', body => body
-//         .replace('playerMicroformatRenderer', '')
-//         .replace('videoDetails', ''));
-//       info.player_response = info['player_response'] || info['playerResponse'];
-//       final author = extras.getAuthor(info);
-//       expect.deepEqual(author, {});
-//     });
-//   });
-
-//   group('from a rental', () {
-//     test('Returns video author object', () {
-//       final info = require('./files/videos/rental/expected-info.json');
-//       final author = extras.getAuthor(info);
-//       expect(author);
-//       assertURL(author['avatar']);
-//       assertThumbnails(author['thumbnails']);
-//       assertChannelURL(author['channel_url']);
-//       assertChannelURL(author['external_channel_url']);
-//       assertUserID(author['id']);
-//       assertUserName(author['user']);
-//       expect(author['name']);
-//       assertUserURL(author['user_url']);
-//       expect['strictEqual'](typeof author['verified'], 'boolean');
-//       expect(!author['subscriber_count']);
-//     });
-//   });
+    group('With invalid input', () {
+      test('Should return an empty object', () {
+        final media = getMedia({'invalidObject': ''});
+        expectOk(media);
+        expect(media, equals({}));
+      });
+    });
   });
-
-// group('extras.getMedia()', () {
-//   test('Returns media object', () {
-//     final info = require('./files/videos/music/expected-info.json');
-//     final media = extras.getMedia(info);
-//     expect(media);
-//     expect.strictEqual(media['artist'], 'Syn Cole');
-//     assertChannelURL(media['artist_url']);
-//     expect['strictEqual'](media['category'], 'Music');
-//     assertURL(media['category_url']);
-//   });
-
-//   group('On a video associated with a game', () {
-//     test('Returns media object', () {
-//       final info = require('./files/videos/game/expected-info.json');
-//       final media = extras.getMedia(info);
-//       expect(media);
-//       expect.strictEqual(media['category'], 'Gaming');
-//       assertURL(media['category_url']);
-//       expect['strictEqual'](media['game'], 'Pokémon Snap');
-//       assertURL(media['game_url']);
-//       expect['strictEqual'](media['year'], '1999');
-//     });
-//   });
-
-//   group('With invalid input', () {
-//     test('Should return an empty object', () {
-//       final media = extras.getMedia({ invalidObject: '' });
-//       expect(media);
-//       expect.deepEqual(media, {});
-//     });
-//   });
-// });
 
 // group('extras.getRelatedVideos()', () {
 //   // To remove later.

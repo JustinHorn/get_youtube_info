@@ -47,9 +47,10 @@ Map getMedia(Map<String, dynamic> info) {
     // Do nothing
   }
 
-  var result =
-      results.firstWhere((v) => nodeIsTruthy(v['videoSecondaryInfoRenderer']));
-  if (!result) {
+  var result = results.firstWhere(
+      (v) => nodeIsTruthy(v['videoSecondaryInfoRenderer']),
+      orElse: () => null);
+  if (!nodeIsTruthy(result)) {
     return {};
   }
 
@@ -66,9 +67,10 @@ Map getMedia(Map<String, dynamic> info) {
         var runs = contents['runs'];
         if (nodeIsTruthy(runs) &&
             nodeIsTruthy(runs.first['navigationEndpoint'])) {
-          media['${title}_url'] = BASE_URL +
+          media['${title}_url'] = nodeURL(
               runs.first['navigationEndpoint']['commandMetadata']
-                  ['webCommandMetadata']['url'];
+                  ['webCommandMetadata']['url'],
+              BASE_URL);
         }
         if (TITLE_TO_CATEGORY.containsKey(title)) {
           media['category'] = TITLE_TO_CATEGORY[title]!['name'];
@@ -76,17 +78,20 @@ Map getMedia(Map<String, dynamic> info) {
         }
       } else if (nodeIsTruthy(row['richMetadataRowRenderer'])) {
         var contents = row['richMetadataRowRenderer']['contents'];
-        var boxArt = contents.where((meta) =>
-            meta['richMetadataRenderer']['style'] ==
-            'RICH_METADATA_RENDERER_STYLE_BOX_ART');
+        var boxArt = contents
+            .where((meta) =>
+                meta['richMetadataRenderer']['style'] ==
+                'RICH_METADATA_RENDERER_STYLE_BOX_ART')
+            .toList();
         for (var box in boxArt) {
           var richMetadataRenderer = box['richMetadataRenderer'];
           var meta = richMetadataRenderer;
           media['year'] = getText(meta['subtitle']);
-          var type = getText(meta['callToAction']).split(' ').first;
+          var type = getText(meta['callToAction']).split(' ')[1];
           media[type] = getText(meta['title']);
-          media['${type}_url'] = BASE_URL +
-              meta['endpoint']['commandMetadata']['webCommandMetadata']['url'];
+          media['${type}_url'] = nodeURL(
+              meta['endpoint']['commandMetadata']['webCommandMetadata']['url'],
+              BASE_URL);
           media['thumbnails'] = meta['thumbnail']['thumbnails'];
         }
         var topic = (contents as List)
@@ -97,8 +102,9 @@ Map getMedia(Map<String, dynamic> info) {
         for (var t in topic) {
           var meta = t['richMetadataRenderer'];
           media['category'] = getText(meta['title']);
-          media['category_url'] = BASE_URL +
-              meta['endpoint']['commandMetadata']['webCommandMetadata']['url'];
+          media['category_url'] = nodeURL(
+              meta['endpoint']['commandMetadata']['webCommandMetadata']['url'],
+              BASE_URL);
         }
       }
     }
