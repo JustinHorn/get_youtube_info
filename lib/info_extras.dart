@@ -9,22 +9,28 @@ const TITLE_TO_CATEGORY = {
   'song': {'name': 'Music', 'url': 'https://music.youtube.com/'},
 };
 
-final hourRegExp = RegExp('(\d\d):(\d\d):(\d\d)');
-final minuteRegExp = RegExp('(\d\d):(\d\d)');
+final hourRegExp = RegExp(r'(\d{1,2}):(\d\d):(\d\d)');
+final minuteRegExp = RegExp(r'(\d{1,2}):(\d\d)');
+final secondsRegExp = RegExp(r'\d{1,2}');
 
 int parseTimestamp(String timestamp) {
   if (hourRegExp.hasMatch(timestamp)) {
     var match = hourRegExp.firstMatch(timestamp);
-    return ((int.parse(match![0]!) * 60 + int.parse(match[1]!)) * 60 +
-            int.parse(match[2]!)) *
+    return ((int.parse(match![1]!) * 60 + int.parse(match[2]!)) * 60 +
+            int.parse(match[3]!)) *
         1000;
   }
 
   if (minuteRegExp.hasMatch(timestamp)) {
     var match = minuteRegExp.firstMatch(timestamp);
-    return (int.parse(match![0]!) * 60 + int.parse(match[1]!)) * 1000;
+    return (int.parse(match![1]!) * 60 + int.parse(match[2]!)) * 1000;
   }
-  throw 'no match for $timestamp';
+
+  if (secondsRegExp.hasMatch(timestamp)) {
+    var match = secondsRegExp.firstMatch(timestamp);
+    return int.parse(match![0]!) * 1000;
+  }
+  throw 'no match for |$timestamp|';
 }
 
 final getText = (dynamic obj) => nodeIsTruthy(obj)
@@ -144,7 +150,6 @@ getAuthor(Map<String, dynamic> info) {
     verified = isVerified(videoOwnerRenderer['badges']);
   } catch (err) {
     // Do nothing.
-    print(err);
   }
   try {
     var videoDetails =
@@ -185,24 +190,25 @@ getAuthor(Map<String, dynamic> info) {
 }
 
 parseRelatedVideo(details, rvsParams) {
-  if (!details) return;
+  if (!nodeIsTruthy(details)) return;
   try {
     var viewCount = getText(details['viewCountText']);
     var shortViewCount = getText(details['shortViewCountText']);
-    var rvsDetails =
-        rvsParams.where((elem) => elem['id'] == details['videoId']);
+    var rvsDetails = rvsParams.firstWhere(
+        (elem) => elem['id'] == details['videoId'],
+        orElse: () => null);
+
     if (!RegExp('^\d').hasMatch(shortViewCount)) {
       shortViewCount = rvsDetails?['short_view_count_text'] ?? '';
     }
     viewCount = (RegExp('^\d').hasMatch(viewCount) ? viewCount : shortViewCount)
         .split(' ')
         .first;
-    var browseEndpoint = details['shortBylineText']['runs'][0]
-        ['navigationEndpoint']['browseEndpoin'];
+    var browseEndpoint = details['shortBylineText']['runs']
+        .first['navigationEndpoint']['browseEndpoint'];
     var channelId = browseEndpoint['browseId'];
     var name = getText(details['shortBylineText']);
-    var user =
-        (browseEndpoint?['canonicalBaseUrl'] ?? '').split('/').slice(-1)[0];
+    var user = (browseEndpoint?['canonicalBaseUrl'] ?? '').split('/').last;
     Map<String, dynamic> video = {
       'id': details['videoId'],
       'title': getText(details['title']),
@@ -211,8 +217,8 @@ parseRelatedVideo(details, rvsParams) {
         'id': channelId,
         'name': name,
         'user': user,
-        'channel_url': 'https://www.youtube.com/channel/${channelId}',
-        'user_url': 'https://www.youtube.com/user/${user}',
+        'channel_url': 'https://www.youtube.com/channel/$channelId',
+        'user_url': 'https://www.youtube.com/user/$user',
         'thumbnails':
             details['channelThumbnail']['thumbnails'].map((thumbnail) {
           thumbnail['url'] = nodeURL(thumbnail['url'], BASE_URL);
@@ -226,13 +232,13 @@ parseRelatedVideo(details, rvsParams) {
         //   return video['author']['name'];
         // },
       },
-      'short_view_count_text': shortViewCount.split(' ')[0],
+      'short_view_count_text': shortViewCount.split(' ').first,
       'view_count': viewCount.replaceAll(',', ''),
-      'length_seconds': details['lengthText']
+      'length_seconds': nodeIsTruthy(details['lengthText'])
           ? ((parseTimestamp(getText(details['lengthText'])) / 1000)).round()
           : rvsParams?['length_seconds']?.toString() ?? '',
       'thumbnails': details['thumbnail']['thumbnails'],
-      'richThumbnails': details['richThumbnail']
+      'richThumbnails': nodeIsTruthy(details['richThumbnail'])
           ? details['richThumbnail']['movingThumbnailRenderer']
               ['movingThumbnailDetails']['thumbnails']
           : [],
@@ -264,7 +270,8 @@ getRelatedVideos(Map<String, dynamic> info) {
     rvsParams = info['response']['webWatchNextResponseExtensionData']
             ['relatedVideoArgs']
         .split(',')
-        .map((e) => QueryString.parse(e));
+        .map((e) => QueryString.parse(e))
+        .toList();
   } catch (err) {
     // Do nothing.
   }
@@ -277,17 +284,17 @@ getRelatedVideos(Map<String, dynamic> info) {
   var videos = [];
   for (var result in secondaryResults) {
     var details = result['compactVideoRenderer'];
-    if (details) {
+    if (nodeIsTruthy(details)) {
       var video = parseRelatedVideo(details, rvsParams);
-      if (video) videos.add(video);
+      if (nodeIsTruthy(video)) videos.add(video);
     } else {
       var autoplay = nodeOr(
           result['compactAutoplayRenderer'], result['itemSectionRenderer']);
-      if (autoplay == null || autoplay['contents']! is List) continue;
+      if (autoplay == null || autoplay['contents'] is! List) continue;
       for (var content in autoplay['contents']) {
         var video =
             parseRelatedVideo(content['compactVideoRenderer'], rvsParams);
-        if (video) videos.add(video);
+        if (nodeIsTruthy(video)) videos.add(video);
       }
     }
   }
@@ -302,15 +309,15 @@ int? getLikes(info) {
   try {
     var contents = info['response']['contents']['twoColumnWatchNextResults']
         ['results']['results']['contents'];
-    var video = contents.firstWhere((r) => r['videoPrimaryInfoRenderer']);
+    var video =
+        contents.firstWhere((r) => nodeIsTruthy(r['videoPrimaryInfoRenderer']));
     var buttons = video['videoPrimaryInfoRenderer']['videoActions']
         ['menuRenderer']['topLevelButtons'];
-    var like = buttons.where((b) =>
-        b['toggleButtonRenderer'] &&
-        b['toggleButtonRenderer']['defaultIcon']['iconType'] == 'LIKE');
+    var like = buttons.firstWhere(
+        (b) => b['toggleButtonRenderer']?['defaultIcon']['iconType'] == 'LIKE');
     return int.parse(like['toggleButtonRenderer']['defaultText']
             ['accessibility']['accessibilityData']['label']
-        .replaceAll(RegExp('\D+'), ''));
+        .replaceAll(RegExp(r'\D+'), ''));
   } catch (err) {
     return null;
   }
@@ -320,19 +327,19 @@ int? getLikes(info) {
 ///
 /// @param {Object} info
 /// @returns {number}
-getDislikes(info) {
+int? getDislikes(info) {
   try {
     var contents = info['response']['contents']['twoColumnWatchNextResults']
         ['results']['results']['contents'];
-    var video = contents.where((r) => r['videoPrimaryInfoRenderer']);
+    var video =
+        contents.firstWhere((r) => nodeIsTruthy(r['videoPrimaryInfoRenderer']));
     var buttons = video['videoPrimaryInfoRenderer']['videoActions']
         ['menuRenderer']['topLevelButtons'];
-    var dislike = buttons.where((b) =>
-        b['toggleButtonRenderer'] &&
-        b['toggleButtonRenderer']['defaultIcon']['iconType'] == 'DISLIKE');
+    var dislike = buttons.firstWhere((b) =>
+        b['toggleButtonRenderer']?['defaultIcon']['iconType'] == 'DISLIKE');
     return int.parse(dislike['toggleButtonRenderer']['defaultText']
             ['accessibility']['accessibilityData']['label']
-        .replaceAll(RegExp('\D+'), ''));
+        .replaceAll(RegExp(r'\D+'), ''));
   } catch (err) {
     return null;
   }
@@ -370,8 +377,8 @@ getStoryboards(Map<String, dynamic> info) {
       ?.split('|');
 
   if (parts == null) return [];
-
-  var url = Uri.http(parts.first, "", {});
+  print(parts.first);
+  var url = Uri.parse(parts.first);
 
   parts.removeAt(0);
 
@@ -387,7 +394,16 @@ getStoryboards(Map<String, dynamic> info) {
         nameReplacement = propList[6],
         sigh = propList[7];
 
-    url = Uri.http(url.toString(), "", {'sigh': sigh});
+    url = Uri(
+        scheme: url.scheme,
+        path: url.path,
+        queryParameters: {
+          ...url.queryParameters,
+          ...{'sigh': sigh},
+        },
+        fragment: url.fragment,
+        host: url.host,
+        port: url.port);
 
     //set('sigh', sigh);
 
@@ -411,7 +427,7 @@ getStoryboards(Map<String, dynamic> info) {
       'rows': rows,
       'storyboardCount': storyboardCount,
     };
-  });
+  }).toList();
 }
 
 /// Get chapters info.
@@ -431,9 +447,11 @@ getChapters(info) {
   if (!nodeIsTruthy(marker)) return [];
   final chapters = marker['value']['chapters'];
 
-  return chapters.map((chapter) => ({
-        'title': getText(chapter?['chapterRenderer']?['title']),
-        'start_time':
-            chapter?['chapterRenderer']?['timeRangeStartMillis'] / 1000,
-      }));
+  return chapters
+      .map((chapter) => ({
+            'title': getText(chapter?['chapterRenderer']?['title']),
+            'start_time':
+                chapter?['chapterRenderer']?['timeRangeStartMillis'] / 1000,
+          }))
+      .toList();
 }
