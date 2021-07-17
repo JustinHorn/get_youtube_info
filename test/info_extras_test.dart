@@ -4,8 +4,7 @@ import 'dart:io';
 import 'package:get_youtube_info/get_youtube_info.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-expectOk(dynamic x) => expect(nodeIsTruthy(x), true);
-expectNotOk(dynamic x) => expect(nodeIsTruthy(x), false);
+import 'helper.dart';
 
 assertURL(url) {
   expect(RegExp('^https?://').hasMatch(url), true, reason: 'Not a URL: ${url}');
@@ -70,32 +69,15 @@ assertRelatedVideos(relatedVideos, {assertRichThumbnails = false}) {
   }
 }
 
-Future<String> getFileString(String path) async {
-  final fileString = await File(path).readAsString();
-  return fileString;
-}
-
-Future<Map<String, dynamic>> getFileAsMap(String path) async {
-  final fileString = await File(path).readAsString();
-  final Map<String, dynamic> html5player = jsonDecode(fileString);
-  return html5player;
-}
-
-Future<dynamic> getFileAsMapOrList(String path) async {
-  final fileString = await File(path).readAsString();
-  return jsonDecode(fileString);
-}
-
 Future<Map<String, dynamic>> infoFromWatchJSON(type, transformBody) async {
   var watchObj;
   if (nodeIsTruthy(transformBody)) {
     var watchJSON =
-        await getFileString('./test/files/videos/${type}/watch.json');
+        await getFileAsString('./test/files/videos/$type/watch.json');
     watchJSON = transformBody(watchJSON);
     watchObj = jsonDecode(watchJSON);
   } else {
-    watchObj =
-        await getFileAsMapOrList('./test/files/videos/${type}/watch.json');
+    watchObj = await getFileAsMapOrList('./test/files/videos/$type/watch.json');
   }
   var info =
       (watchObj as List).fold({}, (Map part, curr) => ({...part, ...curr}));

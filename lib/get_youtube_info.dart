@@ -1,5 +1,9 @@
 library get_youtube_info;
 
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+
 import 'package:http/http.dart' as http;
 import 'dart:core';
 
@@ -10,6 +14,7 @@ part 'sig.dart';
 part 'formats.dart';
 part 'format_utils.dart';
 part 'info_extras.dart';
+part 'info.dart';
 
 bool nodeIsTruthy(dynamic value) =>
     value != 0 && value != '' && value != false && value != null;

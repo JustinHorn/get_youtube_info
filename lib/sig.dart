@@ -2,7 +2,9 @@ part of get_youtube_info;
 
 // A shared cache to keep track of html5player.js tokens.
 
-var cache = Cache();
+class Sig {
+  static final cache = Cache();
+}
 
 /// Extract signature deciphering tokens from html5player file.
 ///
@@ -11,13 +13,13 @@ var cache = Cache();
 /// @returns {Promise<Array.<string>>}
 Future<List<String>> getTokens(
     String html5playerfile, Map<String, dynamic> options) async {
-  return await cache.getOrSet(html5playerfile, () async {
+  return await Sig.cache.getOrSet(html5playerfile, () async {
     final body = (await exposedMiniget(html5playerfile, options: options)).body;
     final tokens = extractActions(body);
     if (tokens == null || tokens.length == 0) {
       throw 'Could not extract signature deciphering actions';
     }
-    cache.set(html5playerfile, tokens);
+    Sig.cache.set(html5playerfile, tokens);
     return tokens;
   });
 }
@@ -220,8 +222,8 @@ setDownloadURL(Map<String, dynamic> format, String sig) {
 /// @param {Array.<Object>} formats
 /// @param {string} html5player
 /// @param {Object} options
-decipherFormats(List<Map<String, dynamic>> formats, String html5player,
-    Map<String, dynamic> options) async {
+Future<dynamic> decipherFormats(List<Map<String, dynamic>> formats,
+    String html5player, Map<String, dynamic> options) async {
   var decipheredFormats = {};
   var tokens = await (getTokens(html5player, options) as Future<List<String>>);
   formats.forEach((format) {

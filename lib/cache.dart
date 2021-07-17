@@ -40,7 +40,8 @@ class Cache {
   }
 
   clear() {
-    throw 'not implemented!';
+    map.clear();
+    // throw 'not implemented!';
     // for (let entry of this.values()) {
     //   clearTimeout(entry.tid);
     // }

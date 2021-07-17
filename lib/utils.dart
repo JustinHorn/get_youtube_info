@@ -122,16 +122,14 @@ final String Function(String mixedJson) cutAfterJSON = (mixedJson) {
 /// @param {Array.<string>} statuses
 /// @param {Error} ErrorType
 /// @returns {!Error}
-final String? Function(
-        Map<String, dynamic> player_response, List<String> statuses) playError =
-    (player_response, statuses) {
+T? playError<T extends Error>(player_response, statuses, T create(dynamic x)) {
   var playability =
       player_response.isNotEmpty ? player_response['playabilityStatus'] : null;
   if (playability && statuses.contains(playability['status'])) {
-    return playability['reason'] ?? playability['messages']?[0];
+    return create(playability['reason'] ?? playability['messages']?.first);
   }
   return null;
-};
+}
 
 const Map<String, dynamic> x = {};
 
@@ -143,8 +141,7 @@ const Map<String, dynamic> x = {};
 /// @returns {miniget.Stream}
 ///
 Future<http.Response> exposedMiniget(String url,
-    {Map<String, dynamic> options = x,
-    Map<String, dynamic> requestOptionsOverwrite = x}) async {
+    {Map options = x, Map requestOptionsOverwrite = x}) async {
   final req = await http
       .get(Uri.parse(url), headers: {...options, ...requestOptionsOverwrite});
 
