@@ -125,7 +125,7 @@ final String Function(String mixedJson) cutAfterJSON = (mixedJson) {
 T? playError<T extends Error>(player_response, statuses, T create(dynamic x)) {
   var playability =
       player_response.isNotEmpty ? player_response['playabilityStatus'] : null;
-  if (playability && statuses.contains(playability['status'])) {
+  if (nodeIsTruthy(playability) && statuses.contains(playability['status'])) {
     return create(playability['reason'] ?? playability['messages']?.first);
   }
   return null;
@@ -142,8 +142,14 @@ const Map<String, dynamic> x = {};
 ///
 Future<http.Response> exposedMiniget(String url,
     {Map options = x, Map requestOptionsOverwrite = x}) async {
-  final req = await http
-      .get(Uri.parse(url), headers: {...options, ...requestOptionsOverwrite});
+  print(url);
+
+  final req = await http.get(Uri.parse(url), headers: {
+    ...options['headers'] ?? {},
+    ...requestOptionsOverwrite['headers'] ?? {}
+  });
+  print('reqBody');
+  print(req.body.substring(0, min(req.body.length, 100)));
 
   if (options['requestCallback'] is Function) options['requestCallback'](req);
   return req;

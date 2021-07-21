@@ -355,8 +355,8 @@ cleanVideoDetails(Map<String, dynamic> videoDetails, info) {
   videoDetails.remove('thumbnail');
   // utils.deprecate(videoDetails, 'thumbnail', { thumbnails: videoDetails.thumbnails },
   //   'videoDetails.thumbnail.thumbnails', 'videoDetails.thumbnails');
-  videoDetails['description'] =
-      videoDetails['shortDescription'] || getText(videoDetails['description']);
+  videoDetails['description'] = nodeOr(
+      videoDetails['shortDescription'], getText(videoDetails['description']));
   videoDetails.remove('shortDescription');
   // utils.deprecate(videoDetails, 'shortDescription', videoDetails.description,
   //   'videoDetails.shortDescription', 'videoDetails.description');
@@ -377,7 +377,6 @@ getStoryboards(Map<String, dynamic> info) {
       ?.split('|');
 
   if (parts == null) return [];
-  print(parts.first);
   var url = Uri.parse(parts.first);
 
   parts.removeAt(0);

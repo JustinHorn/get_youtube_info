@@ -16,6 +16,8 @@ main() {
   group('ytdl.getBasicInfo()', () {
     // before(() nock.disableNetConnect());
     // after(()  nock.enableNetConnect());
+    setUpAll(() => nock.init());
+
     tearDown(() => nock.cleanAll());
     tearDown(() {
       Sig.cache.clear();

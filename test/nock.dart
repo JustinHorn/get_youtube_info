@@ -37,11 +37,11 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
       List<Future> futures = [];
       testOptions.forEach(
           (testOption) => futures.add(addScope(host, testOption, nockOptions)));
-      Future.wait(futures);
+      await Future.wait(futures);
       return;
     }
     var scope = nock(host);
-    Interceptor? scopeInterceptor;
+    print(host);
     if (nodeIsTruthy(nockOptions['filteringPath'])) {
       /// TODO: implement filtertinPath!!!
       // print(nockOptions['filteringPath']);
@@ -50,18 +50,18 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
       //     nockOptions['filteringPath'].filter1,
       //     nockOptions['filteringPath'].filter2);
     }
-    scopeInterceptor = nodeOr(scopeInterceptor, scope).get(nockOptions['get'])
-      ..headers({'reqheaders': opts['headers']});
+    Interceptor scopeInterceptor = scope.get(nockOptions['path'])..persist();
+
     var statusCode = testOptions is List ? testOptions[1] ?? 200 : 200;
     var filepath = "$folder/${nockOptions['file']}";
     var reply = testOptions is List ? testOptions[2] : null;
     if (!nodeIsTruthy(reply) || testOptions == true) {
       var fileString = await getFileAsString(filepath);
-      scopeInterceptor = scopeInterceptor!..reply(statusCode, fileString);
+      scopeInterceptor = scopeInterceptor..reply(statusCode, fileString);
     } else if (reply is String) {
-      scopeInterceptor = scopeInterceptor!..reply(200, reply);
+      scopeInterceptor = scopeInterceptor..reply(200, reply);
     } else if (reply is Function) {
-      scopeInterceptor = scopeInterceptor!
+      scopeInterceptor = scopeInterceptor
         ..reply(200, (uri, requestBody, callback) async {
           var fileString;
           try {
@@ -72,21 +72,26 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
           callback(null, testOptions[2](fileString));
         });
     }
-    scopes.add(scopeInterceptor!);
+    if (nockOptions['query'] != null) {
+      scopeInterceptor.query((q) =>
+          RegExp(nockOptions['query']).hasMatch(Uri(queryParameters: q).query));
+    }
+
+    scopes.add(scopeInterceptor);
   }
 
   if (nodeIsTruthy(opts['watchJson'])) {
     await addScope(YT_HOST, opts['watchJson'], {
-      'filteringPath': [RegExp(r'/watch\?v=.+&pbj=1$'), '/watch?v=XXX&pbj=1'],
-      'get': '/watch?v=XXX&pbj=1',
+      'path': '/watch',
+      'query': r'^v=.+&pbj=1$',
       'file': 'watch.json',
     });
   }
 
   if (nodeIsTruthy(opts['watchHtml'])) {
     await addScope(YT_HOST, opts['watchHtml'], {
-      'filteringPath': [RegExp(r'/watch\?v=.+&hl=en$'), '/watch?v=XXX'],
-      'get': '/watch?v=XXX',
+      'query': r'^v=.+&hl=en$',
+      'path': '/watch',
       'file': 'watch.html',
     });
   }
@@ -101,7 +106,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
 
   if (nodeIsTruthy(opts['m3u8'])) {
     await addScope(M3U8_HOST, opts['m3u8'], {
-      'filteringPath': ['/api/manifest/hls_variant/'],
+      // 'filteringPath': ['/api/manifest/hls_variant/'],
       'get': '/api/manifest/hls_variant/',
       'file': 'hls-manifest.m3u8',
     });
@@ -109,7 +114,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
 
   if (nodeIsTruthy(opts['player'])) {
     await addScope(YT_HOST, opts['player'], {
-      'filteringPath': [RegExp(r'/player.+$'), '/player.js'],
+      // 'filteringPath': [RegExp(r'/player.+$'), '/player.js'],
       'get': '/s/player.js',
       'file': existingFiles
           .firstWhere((f) => RegExp(r'(html5)?player.+\.js$').hasMatch(f)),
@@ -128,7 +133,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
       'filteringPath': [
         (p) {
           var regexp = RegExp(r'\?video_id=([a-zA-Z0-9_-]+)&(.+)$');
-          return p.replace(regexp, (_, r) => '?video_id=$r');
+          return p.replaceAll(regexp, (_, r) => '?video_id=$r');
         }
       ],
       'get': '${INFO_PATH}video_id=$id',

@@ -57,10 +57,8 @@ getBasicInfo(id, Map<String, dynamic> options) async {
   };
   options['requestOptions'] = {...(options['requestOptions'] ?? {}) as Map};
   options['requestOptions']['headers'] = {
-    {
-      'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Safari/537.36',
-    },
+    'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Safari/537.36',
     ...(options['requestOptions']?['headers'] ?? {})
   };
   final validate = (info) {
@@ -77,17 +75,21 @@ getBasicInfo(id, Map<String, dynamic> options) async {
             isNotYetBroadcasted(info['player_response']))
         : null;
   };
-  var info = await pipeline(validate, retryOptions, [
+  var info = await pipeline((info, x) => validate(info), retryOptions, [
     () async => await getWatchHTMLPage(id, options),
     () async => await getWatchJSONPage(id, options),
     () async => await getVideoInfoPage(id, options),
   ]);
+
+  info = Map<String, dynamic>.from(info);
 
   info = {
     ...info,
     'formats': parseFormats(info['player_response']),
     'related_videos': getRelatedVideos(info),
   };
+
+  info = Map<String, dynamic>.from(info);
 
   // Add additional properties to info.
   final media = getMedia(info);
@@ -97,7 +99,7 @@ getBasicInfo(id, Map<String, dynamic> options) async {
     'likes': getLikes(info),
     'dislikes': getDislikes(info),
     'age_restricted': nodeIsTruthy(nodeIsTruthy(media) &&
-        media['notice_url'] &&
+        nodeIsTruthy(media['notice_url']) &&
         AGE_RESTRICTED_URLS.any((url) => media['notice_url'].contains(url))),
 
     // Give the standard link to the video.
@@ -142,11 +144,11 @@ isNotYetBroadcasted(player_response) {
 
 getWatchHTMLURL(id, options) =>
     "${InfoClass.BASE_URL + id}&hl=${nodeOr(options['lang'], 'en')}";
-getWatchHTMLPageBody(id, options) async {
+Future<dynamic> getWatchHTMLPageBody(id, options) async {
   final url = getWatchHTMLURL(id, options);
   return await InfoClass.watchPageCache.getOrSet(
       url,
-      () => exposedMiniget(url, options: options['headers'] ?? {})
+      () async => await exposedMiniget(url, options: options ?? {})
           .then((r) => r.body));
 }
 
@@ -169,7 +171,7 @@ getHTML5player(String body) {
 final getIdentityToken = (id, options, key, throwIfNotFound) =>
     InfoClass.cookieCache.getOrSet(key, () async {
       var page = await getWatchHTMLPageBody(id, options);
-      var match = RegExp('(["\'])ID_TOKEN\1[:,]\s?"([^"]+)"').firstMatch(page);
+      var match = RegExp('(["\'])ID_TOKEN\1[:,]\\s?"([^"]+)"').firstMatch(page);
       if (nodeIsTruthy(match) && throwIfNotFound) {
         throw new UnrecoverableError(
             'Cookie header used in request, but unable to find YouTube identity token');
@@ -195,10 +197,10 @@ pipeline(validate, retryOptions, endpoints) async {
             info?['player_response']?['videoDetails'],
             newInfo['player_response']['videoDetails']);
         newInfo['player_response'] =
-            assign(info && info['player_response'], newInfo['player_response']);
+            assign(info?['player_response'], newInfo['player_response']);
       }
       info = assign(info, newInfo);
-      if (validate(info, false)) {
+      if (nodeIsTruthy(validate(info, false))) {
         break;
       }
     } catch (err) {
@@ -217,7 +219,7 @@ pipeline(validate, retryOptions, endpoints) async {
 /// @param {Object} target
 /// @param {Object} source
 /// @returns {Object}
-assign(target, Map<String, dynamic> source) {
+assign(target, source) {
   if (!(nodeIsTruthy(target) && nodeIsTruthy(source)))
     return nodeOr(target, source);
   for (var x in source.entries) {
@@ -261,13 +263,13 @@ retryFunc(func, Map<String, dynamic> options) async {
   return result;
 }
 
-final jsonClosingChars = RegExp('^[)\]}\'\s]+');
-parseJSON(source, varName, json) {
+final jsonClosingChars = RegExp(r"^[)\]}\'\s]+");
+handlParseJSON(source, String varName, dynamic json) {
   if (!nodeIsTruthy(json) || json is Map) {
     return json;
   } else {
     try {
-      json = json.replace(jsonClosingChars, '');
+      json = json.replaceAll(jsonClosingChars, '');
       return jsonDecode(json);
     } catch (err) {
       throw 'Error parsing $varName in $source: $err';
@@ -280,24 +282,25 @@ findJSON(source, varName, body, left, right, prependJSON) {
   if (!nodeIsTruthy(jsonStr)) {
     throw 'Could not find $varName in $source';
   }
-  return parseJSON(source, varName, cutAfterJSON('$prependJSON$jsonStr'));
+  return handlParseJSON(source, varName, cutAfterJSON('$prependJSON$jsonStr'));
 }
 
 findPlayerResponse(source, info) {
-  final player_response = info &&
-      ((info['args']?['player_response']) ||
-          info['player_response'] ||
-          info['playerResponse'] ||
-          info['embedded_player_response']);
-  return parseJSON(source, 'player_response', player_response);
+  final player_response = nodeOr(
+      nodeOr((info['args']?['player_response']), info['player_response']),
+      nodeOr(info['playerResponse'], info['embedded_player_response']));
+  return handlParseJSON(source, 'player_response', player_response);
 }
 
 final getWatchJSONURL =
     (id, options) => '${getWatchHTMLURL(id, options)}&pbj=1';
 getWatchJSONPage(id, options) async {
-  final reqOptions = {'headers': {}, ...options['requestOptions']};
+  final Map reqOptions = {'headers': {}, ...options['requestOptions']};
+
   var cookie =
-      reqOptions['headers']['Cookie'] || reqOptions['headers']['cookie'];
+      nodeOr(reqOptions['headers']['Cookie'], reqOptions['headers']['cookie']);
+  print('t0');
+
   reqOptions['headers'] = {
     'x-youtube-client-name': '1',
     'x-youtube-client-version': '2.20201203.06.00',
@@ -305,54 +308,64 @@ getWatchJSONPage(id, options) async {
         InfoClass.cookieCache.get(nodeOr(cookie, 'browser')) ?? '',
     ...reqOptions['headers']
   };
-
+  print('t1');
   final setIdentityToken = (key, throwIfNotFound) async {
-    if (reqOptions['headers']['x-youtube-identity-token']) {
+    if (nodeIsTruthy(reqOptions['headers']['x-youtube-identity-token'])) {
       return;
     }
     reqOptions['headers']['x-youtube-identity-token'] =
         await getIdentityToken(id, options, key, throwIfNotFound);
   };
+  print('t2');
 
-  if (cookie) {
+  if (nodeIsTruthy(cookie)) {
     await setIdentityToken(cookie, true);
   }
+  print('t3');
 
   final jsonUrl = getWatchJSONURL(id, options);
+  print('___');
   final body = (await exposedMiniget(jsonUrl,
           options: options, requestOptionsOverwrite: reqOptions))
       .body;
-  var parsedBody = parseJSON('watch.json', 'body', body);
-  if (parsedBody['reload'] == 'now') {
+  print('getWatchJSONPage-body');
+
+  var parsedBody = handlParseJSON('watch.json', 'body', body);
+  if (parsedBody is Map && parsedBody['reload'] == 'now') {
     await setIdentityToken('browser', false);
   }
-  if (parsedBody['reload'] == 'now' || parsedBody is! List) {
+  print('t4');
+  if ((parsedBody is Map && parsedBody['reload'] == 'now') ||
+      parsedBody is! List) {
     throw 'Unable to retrieve video metadata in watch.json';
   }
-  var info = (parsedBody as List<Map>)
+  print('t5');
+  var info = List<Map>.from(parsedBody)
       .fold({}, (Map part, Map curr) => ({...curr, ...part}));
   info['player_response'] = findPlayerResponse('watch.json', info);
   info['html5player'] = info['player']?['assets']?['js'];
+  print('t6');
 
   return info;
 }
 
 getWatchHTMLPage(id, options) async {
   var body = await getWatchHTMLPageBody(id, options);
-  var info = {'page': 'watch'};
-  try {
-    info['player_response'] = findJSON(
-        'watch.html',
-        'player_response',
-        body,
-        RegExp('\bytInitialPlayerResponse\s*=\s*\{', multiLine: true),
-        '\n',
-        '{');
-  } catch (err) {
-    var args = findJSON('watch.html', 'player_response', body,
-        RegExp('\bytplayer\.config\s*=\s*{'), '</script>', '{');
-    info['player_response'] = findPlayerResponse('watch.html', args);
-  }
+  Map<String, dynamic> info = {'page': 'watch'};
+  // try {
+  info['player_response'] = findJSON(
+      'watch.html',
+      'player_response',
+      body,
+      RegExp(r'\bytInitialPlayerResponse\s*=\s*\{', multiLine: true),
+      '\n',
+      '{');
+  // } catch (err) {
+  //   throw err;
+  //   var args = findJSON('watch.html', 'player_response', body,
+  //       RegExp(r'\bytplayer\.config\s*=\s*{'), '</script>', '{');
+  //   info['player_response'] = findPlayerResponse('watch.html', args);
+  // }
   info['response'] = findJSON('watch.html', 'response', body,
       RegExp('\bytInitialData("\])?\s*=\s*\{', multiLine: true), '\n', '{');
   info['html5player'] = getHTML5player(body);
@@ -391,7 +404,7 @@ getVideoInfoPage(id, options) async {
 /// @returns {Array.<Object>}
 parseFormats(playerResponse) {
   var formats = [];
-  if (playerResponse && playerResponse['streamingData']) {
+  if (nodeIsTruthy(playerResponse?['streamingData'])) {
     formats = [
       ...formats,
       ...playerResponse?['streamingData']?['formats'],
