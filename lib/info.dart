@@ -160,10 +160,10 @@ getEmbedPageBody(id, options) {
 
 getHTML5player(String body) {
   var html5playerRes = RegExp(
-          r'<script\s+src="([^"]+)"(?:\s+type="text\/javascript")?\s+name="player_ias\/base"\s*>|"jsUrl":"([^"]+)"')
+          '<script\\s+src="([^"]+)"(?:\\s+type="text/javascript")?\\s+name="player_ias/base"\\s*>|"jsUrl":"([^"]+)"')
       .firstMatch(body);
 
-  if (nodeIsTruthy(html5playerRes)) return;
+  if (!nodeIsTruthy(html5playerRes)) return;
 
   return nodeOr(html5playerRes![1], html5playerRes[2]);
 }
@@ -324,27 +324,27 @@ getWatchJSONPage(id, options) async {
   print('t3');
 
   final jsonUrl = getWatchJSONURL(id, options);
-  print('___');
   final body = (await exposedMiniget(jsonUrl,
           options: options, requestOptionsOverwrite: reqOptions))
       .body;
-  print('getWatchJSONPage-body');
+
+  print('t4');
 
   var parsedBody = handlParseJSON('watch.json', 'body', body);
   if (parsedBody is Map && parsedBody['reload'] == 'now') {
     await setIdentityToken('browser', false);
   }
-  print('t4');
+  print('t5');
   if ((parsedBody is Map && parsedBody['reload'] == 'now') ||
       parsedBody is! List) {
     throw 'Unable to retrieve video metadata in watch.json';
   }
-  print('t5');
+  print('t6');
   var info = List<Map>.from(parsedBody)
       .fold({}, (Map part, Map curr) => ({...curr, ...part}));
   info['player_response'] = findPlayerResponse('watch.json', info);
   info['html5player'] = info['player']?['assets']?['js'];
-  print('t6');
+  print('t7');
 
   return info;
 }
@@ -352,23 +352,25 @@ getWatchJSONPage(id, options) async {
 getWatchHTMLPage(id, options) async {
   var body = await getWatchHTMLPageBody(id, options);
   Map<String, dynamic> info = {'page': 'watch'};
-  // try {
-  info['player_response'] = findJSON(
-      'watch.html',
-      'player_response',
-      body,
-      RegExp(r'\bytInitialPlayerResponse\s*=\s*\{', multiLine: true),
-      '\n',
-      '{');
-  // } catch (err) {
-  //   throw err;
-  //   var args = findJSON('watch.html', 'player_response', body,
-  //       RegExp(r'\bytplayer\.config\s*=\s*{'), '</script>', '{');
-  //   info['player_response'] = findPlayerResponse('watch.html', args);
-  // }
+  try {
+    info['player_response'] = findJSON(
+        'watch.html',
+        'player_response',
+        body,
+        RegExp(r'\bytInitialPlayerResponse\s*=\s*\{', multiLine: true),
+        '\n',
+        '{');
+  } catch (err) {
+    var args = findJSON('watch.html', 'player_response', body,
+        RegExp(r'\bytplayer\.config\s*=\s*{'), '</script>', '{');
+    info['player_response'] = findPlayerResponse('watch.html', args);
+  }
+
   info['response'] = findJSON('watch.html', 'response', body,
-      RegExp('\bytInitialData("\])?\s*=\s*\{', multiLine: true), '\n', '{');
+      RegExp(r'\bytInitialData("\])?\s*=\s*\{', multiLine: true), '\n', '{');
+
   info['html5player'] = getHTML5player(body);
+
   return info;
 }
 
@@ -407,8 +409,8 @@ parseFormats(playerResponse) {
   if (nodeIsTruthy(playerResponse?['streamingData'])) {
     formats = [
       ...formats,
-      ...playerResponse?['streamingData']?['formats'],
-      ...playerResponse?['streamingData']?['adaptiveFormats']
+      ...playerResponse?['streamingData']?['formats'] ?? {},
+      ...playerResponse?['streamingData']?['adaptiveFormats'] ?? {}
     ];
   }
   return formats;

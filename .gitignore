@@ -76,3 +76,5 @@ build/
 !**/ios/**/default.perspectivev3
 
 lT.dart
+
+*.txt

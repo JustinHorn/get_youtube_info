@@ -145,8 +145,7 @@ Future<http.Response> exposedMiniget(String url,
   print(url);
 
   final req = await http.get(Uri.parse(url), headers: {
-    ...options['headers'] ?? {},
-    ...requestOptionsOverwrite['headers'] ?? {}
+    ...(nodeOr(requestOptionsOverwrite['headers'], options['headers']) ?? {})
   });
   print('reqBody');
   print(req.body.substring(0, min(req.body.length, 100)));

@@ -30,34 +30,37 @@ main() {
     // after(() => miniget.defaultOptions = minigetDefaults);
 
     group('From a regular video', () {
-      test('Retrieves correct metainfo', () async {
+      // test('Retrieves correct metainfo', () async {
+      //   final expected = await getFileAsMap(
+      //       './test/files/videos/regular/expected-info.json');
+      //   final id = '_HSylqgVYQI';
+      //   final scope = await nockFunction(id, 'regular', opts: {
+      //     'watchHtml': false,
+      //     'player': false,
+      //   });
+      //   var info = await getBasicInfo(id, {
+      //     'requestOptions': {'maxRetries': 0}
+      //   });
+      //   scope.done();
+      //   expectOk(info['videoDetails']['description'].length);
+      //   expect(info['formats'].length, expected['formats'].length);
+      // });
+
+      test('Retrieves just enough metainfo without all formats', () async {
+        final id = '5qap5aO4i9A';
         final expected = await getFileAsMap(
-            './test/files/videos/regular/expected-info.json');
-        final id = '_HSylqgVYQI';
-        final scope = await nockFunction(id, 'regular', opts: {
-          'watchHtml': false,
+            './test/files/videos/live-now/expected-info.json');
+        final scope = await nockFunction(id, 'live-now', opts: {
           'player': false,
+          'dashmpd': false,
+          'm3u8': false,
         });
         var info = await getBasicInfo(id, {
           'requestOptions': {'maxRetries': 0}
         });
         scope.done();
-        expectOk(info['videoDetails']['description'].length);
         expect(info['formats'].length, expected['formats'].length);
       });
-
-//     test('Retrieves just enough metainfo without all formats', ()async {
-//       final id = '5qap5aO4i9A';
-//       final expected = await getFileAsMap('./test/files/videos/live-now/expected-info.json');
-//       final scope = nock(id, 'live-now', {
-//         player: false,
-//         dashmpd: false,
-//         m3u8: false,
-//       });
-//       var info = await ytdl.getBasicInfo(id);
-//       scope.done();
-//       assert.notStrictEqual(info.formats.length, expected.formats.length);
-//     });
 
 //     group('Use `ytdl.downloadFromInfo()`', () {
 //       test('Throw error', ()async {

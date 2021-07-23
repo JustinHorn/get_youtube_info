@@ -41,7 +41,6 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
       return;
     }
     var scope = nock(host);
-    print(host);
     if (nodeIsTruthy(nockOptions['filteringPath'])) {
       /// TODO: implement filtertinPath!!!
       // print(nockOptions['filteringPath']);
@@ -169,7 +168,6 @@ filteringPath(uri, filter1, filter2) {
     (path) {
       var x = [filter1, filter2].any((dynamic x) {
         if (path is! String) {
-          print(path);
           throw 'path is not string';
         }
         if (x is String && !path.contains(x)) {

@@ -76,6 +76,13 @@ extension IndexedIterable<E> on Iterable<E> {
   }
 }
 
+Future<void> writeToFileAsString(String content) async {
+  final file = File('test.txt');
+  await file.create();
+  await file.writeAsString(content);
+}
+
+
 
 
 
