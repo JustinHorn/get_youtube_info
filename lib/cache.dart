@@ -12,8 +12,9 @@ class Cache {
 
   set(key, value) {
     if (map.containsKey(key)) {
-      map[key] = value;
+      // map[key] = value;
     }
+    map[key] = value;
   }
 
   get(key) {

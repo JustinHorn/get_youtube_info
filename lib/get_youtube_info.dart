@@ -82,6 +82,12 @@ Future<void> writeToFileAsString(String content) async {
   await file.writeAsString(content);
 }
 
+class MainCache {
+  static final Cache sig = Sig.cache;
+  static final Cache info = InfoClass.cache;
+  static final Cache watch = InfoClass.watchPageCache;
+  static final Cache cookie = InfoClass.cookieCache;
+}
 
 
 

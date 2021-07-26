@@ -1,11 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_test/flutter_test.dart';
-import 'package:get_youtube_info/get_youtube_info.dart';
-
-expectOk(dynamic x) => expect(nodeIsTruthy(x), true);
-expectNotOk(dynamic x) => expect(nodeIsTruthy(x), false);
+bool nodeIsTruthy(dynamic value) =>
+    value != 0 && value != '' && value != false && value != null;
 
 Future<String> getFileAsString(String path) async {
   final fileString = await File(path).readAsString();

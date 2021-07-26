@@ -142,14 +142,16 @@ const Map<String, dynamic> x = {};
 ///
 Future<http.Response> exposedMiniget(String url,
     {Map options = x, Map requestOptionsOverwrite = x}) async {
-  print(url);
-
   final req = await http.get(Uri.parse(url), headers: {
     ...(nodeOr(requestOptionsOverwrite['headers'], options['headers']) ?? {})
   });
-  print('reqBody');
+  print(url);
   print(req.body.substring(0, min(req.body.length, 100)));
-
+  if (req.statusCode != 200) {
+    print('reqbody');
+    print(req.headers);
+  }
+  if (req.statusCode != 200) throw 'error on request $url';
   if (options['requestCallback'] is Function) options['requestCallback'](req);
   return req;
 }

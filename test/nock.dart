@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:get_youtube_info/get_youtube_info.dart';
 import 'package:nock/nock.dart';
 
 import 'helper.dart';
@@ -13,6 +12,8 @@ const EMBED_PATH = '/embed/';
 const INFO_PATH = '/get_video_info?';
 
 Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
+  nock.init();
+
   if (opts == null) opts = {};
   List<Interceptor> scopes = [];
   var folder = './test/files/videos/$type';
@@ -49,27 +50,22 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
       //     nockOptions['filteringPath'].filter1,
       //     nockOptions['filteringPath'].filter2);
     }
-    Interceptor scopeInterceptor = scope.get(nockOptions['path'])..persist();
+    Interceptor scopeInterceptor =
+        scope.get(nockOptions['path']); //..persist();
 
     var statusCode = testOptions is List ? testOptions[1] ?? 200 : 200;
     var filepath = "$folder/${nockOptions['file']}";
-    var reply = testOptions is List ? testOptions[2] : null;
+    var reply =
+        testOptions is List && testOptions.length >= 3 ? testOptions[2] : null;
     if (!nodeIsTruthy(reply) || testOptions == true) {
       var fileString = await getFileAsString(filepath);
       scopeInterceptor = scopeInterceptor..reply(statusCode, fileString);
     } else if (reply is String) {
       scopeInterceptor = scopeInterceptor..reply(200, reply);
     } else if (reply is Function) {
-      scopeInterceptor = scopeInterceptor
-        ..reply(200, (uri, requestBody, callback) async {
-          var fileString;
-          try {
-            fileString = await getFileAsString(filepath);
-          } catch (err) {
-            return callback(err);
-          }
-          callback(null, testOptions[2](fileString));
-        });
+      var fileString = await getFileAsString(filepath);
+      var body = testOptions[2](fileString);
+      scopeInterceptor = scopeInterceptor..reply(200, body);
     }
     if (nockOptions['query'] != null) {
       scopeInterceptor.query((q) =>
@@ -114,7 +110,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
   if (nodeIsTruthy(opts['player'])) {
     await addScope(YT_HOST, opts['player'], {
       // 'filteringPath': [RegExp(r'/player.+$'), '/player.js'],
-      'get': '/s/player.js',
+      'path': '/s/player.js',
       'file': existingFiles
           .firstWhere((f) => RegExp(r'(html5)?player.+\.js$').hasMatch(f)),
     });
@@ -122,20 +118,16 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
 
   if (nodeIsTruthy(opts['embed'])) {
     await addScope(YT_HOST, opts['embed'], {
-      'get': '${EMBED_PATH + id}?hl=en',
+      'query': 'hl=en',
+      'path': '${EMBED_PATH + id}',
       'file': 'embed.html',
     });
   }
 
   if (nodeIsTruthy(opts['get_video_info'])) {
     await addScope(YT_HOST, opts['get_video_info'], {
-      'filteringPath': [
-        (p) {
-          var regexp = RegExp(r'\?video_id=([a-zA-Z0-9_-]+)&(.+)$');
-          return p.replaceAll(regexp, (_, r) => '?video_id=$r');
-        }
-      ],
-      'get': '${INFO_PATH}video_id=$id',
+      'query': r'video_id=([a-zA-Z0-9_-]+)&(.+)$',
+      'path': '${INFO_PATH}video_id=$id',
       'file': 'get_video_info',
     });
   }

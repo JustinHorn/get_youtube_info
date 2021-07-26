@@ -15,11 +15,12 @@ part of get_youtube_info;
 // Cached for storing basic/full info.
 
 class InfoClass {
+  static var max_retries = 0;
   static const BASE_URL = 'https://www.youtube.com/watch?v=';
 
-  static var cache = Cache();
-  static var cookieCache = new Cache(timeout: 1000 * 60 * 60 * 24);
-  static var watchPageCache = new Cache();
+  static final cache = Cache();
+  static final cookieCache = new Cache(timeout: 1000 * 60 * 60 * 24);
+  static final watchPageCache = new Cache();
 }
 
 // Special error class used to determine if an error is unrecoverable,
@@ -51,8 +52,9 @@ const AGE_RESTRICTED_URLS = [
 ///@param {Object} options
 /// @returns {Promise<Object>}
 ///
-getBasicInfo(id, Map<String, dynamic> options) async {
+Future<dynamic> getBasicInfo(id, Map<String, dynamic> options) async {
   final Map<String, dynamic> retryOptions = {
+    'maxRetries': InfoClass.max_retries,
     ...options['requestOptions'] ?? {}
   };
   options['requestOptions'] = {...(options['requestOptions'] ?? {}) as Map};
@@ -61,6 +63,7 @@ getBasicInfo(id, Map<String, dynamic> options) async {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Safari/537.36',
     ...(options['requestOptions']?['headers'] ?? {})
   };
+
   final validate = (info) {
     var playErr = playError(
         info['player_response'], ['ERROR'], (d) => UnrecoverableError(d));
@@ -81,6 +84,7 @@ getBasicInfo(id, Map<String, dynamic> options) async {
     () async => await getVideoInfoPage(id, options),
   ]);
 
+  // Map<String, dynamic> info = {};
   info = Map<String, dynamic>.from(info);
 
   info = {
@@ -120,6 +124,7 @@ getBasicInfo(id, Map<String, dynamic> options) async {
 privateVideoError(player_response) {
   var playability = player_response?['playabilityStatus'];
   if (playability?['status'] == 'LOGIN_REQUIRED' &&
+      nodeIsTruthy(playability?['messages']) &&
       nodeIsTruthy(playability?['messages']
               ?.where((m) => RegExp('This is a private video').hasMatch(m))
               .length >
@@ -168,14 +173,20 @@ getHTML5player(String body) {
   return nodeOr(html5playerRes![1], html5playerRes[2]);
 }
 
-final getIdentityToken = (id, options, key, throwIfNotFound) =>
-    InfoClass.cookieCache.getOrSet(key, () async {
+Future<dynamic> getIdentityToken(id, options, key, throwIfNotFound) async =>
+    await InfoClass.cookieCache.getOrSet(key, () async {
       var page = await getWatchHTMLPageBody(id, options);
-      var match = RegExp('(["\'])ID_TOKEN\1[:,]\\s?"([^"]+)"').firstMatch(page);
-      if (nodeIsTruthy(match) && throwIfNotFound) {
+      print('getIdentityToken-t1');
+      var match =
+          RegExp('(["\'])ID_TOKEN\\1[:,]\\s?"([^"]+)"').firstMatch(page);
+      print('getIdentityToken-t2');
+
+      if (!nodeIsTruthy(match) && throwIfNotFound) {
         throw new UnrecoverableError(
             'Cookie header used in request, but unable to find YouTube identity token');
       }
+      print('getIdentityToken-t3');
+
       return match?[2];
     });
 
@@ -191,7 +202,9 @@ pipeline(validate, retryOptions, endpoints) async {
   var info;
   for (var func in endpoints) {
     try {
+      print(func);
       final newInfo = await retryFunc(func, retryOptions);
+      print('pipeline: after retry function');
       if (nodeIsTruthy(newInfo['player_response'])) {
         newInfo['player_response']['videoDetails'] = assign(
             info?['player_response']?['videoDetails'],
@@ -199,6 +212,8 @@ pipeline(validate, retryOptions, endpoints) async {
         newInfo['player_response'] =
             assign(info?['player_response'], newInfo['player_response']);
       }
+      print('pipeline: assigns');
+
       info = assign(info, newInfo);
       if (nodeIsTruthy(validate(info, false))) {
         break;
@@ -225,7 +240,7 @@ assign(target, source) {
   for (var x in source.entries) {
     var key = x.key;
     var value = x.value;
-    if (value != null && value) {
+    if (value != null && nodeIsTruthy(value)) {
       target[key] = value;
     }
   }
@@ -247,6 +262,7 @@ retryFunc(func, Map<String, dynamic> options) async {
   var currentTry = 0, result;
   while (currentTry <= options['maxRetries']) {
     try {
+      print('try: $currentTry');
       result = await func();
       break;
     } catch (err) {
@@ -255,9 +271,14 @@ retryFunc(func, Map<String, dynamic> options) async {
           currentTry >= options['maxRetries']) {
         throw err;
       }
-      var wait = min<int>((++currentTry * options['backoff']['inc']).toInt(),
-          options['backoff']['max']);
-      await new Future.delayed(Duration(milliseconds: wait), () => null);
+      if (nodeIsTruthy(options['backoff']?['inc'])) {
+        var wait = min<num>((++currentTry * options['backoff']['inc']),
+                options['backoff']['max'] ?? double.infinity)
+            .toInt();
+        await new Future.delayed(Duration(milliseconds: wait), () => null);
+      } else {
+        ++currentTry;
+      }
     }
   }
   return result;
@@ -295,7 +316,10 @@ findPlayerResponse(source, info) {
 final getWatchJSONURL =
     (id, options) => '${getWatchHTMLURL(id, options)}&pbj=1';
 getWatchJSONPage(id, options) async {
+  print(options['requestOptions']);
+
   final Map reqOptions = {'headers': {}, ...options['requestOptions']};
+  print(reqOptions["headers"]);
 
   var cookie =
       nodeOr(reqOptions['headers']['Cookie'], reqOptions['headers']['cookie']);
@@ -309,14 +333,20 @@ getWatchJSONPage(id, options) async {
     ...reqOptions['headers']
   };
   print('t1');
-  final setIdentityToken = (key, throwIfNotFound) async {
+  setIdentityToken(key, throwIfNotFound) async {
     if (nodeIsTruthy(reqOptions['headers']['x-youtube-identity-token'])) {
       return;
     }
+    print('setIdentityToken-t1');
     reqOptions['headers']['x-youtube-identity-token'] =
         await getIdentityToken(id, options, key, throwIfNotFound);
-  };
+    print('setIdentityToken-t2');
+  }
+
   print('t2');
+  print(cookie);
+
+  print(reqOptions["headers"]);
 
   if (nodeIsTruthy(cookie)) {
     await setIdentityToken(cookie, true);
@@ -379,7 +409,7 @@ const INFO_PATH = '/get_video_info';
 const VIDEO_EURL = 'https://youtube.googleapis.com/v/';
 getVideoInfoPage(id, options) async {
   var url = Uri.parse('https://${INFO_HOST}${INFO_PATH}');
-
+  print('getVideoInfoPage-t1');
   url = Uri(
       scheme: url.scheme,
       path: url.path,
@@ -395,10 +425,17 @@ getVideoInfoPage(id, options) async {
       fragment: url.fragment,
       host: url.host,
       port: url.port);
+  print('getVideoInfoPage-t2');
 
   final body = (await exposedMiniget(url.toString(), options: options)).body;
+  print('getVideoInfoPage-t3');
+
   var info = QueryString.parse(body);
+  print('getVideoInfoPage-t4');
+
   info['player_response'] = findPlayerResponse('get_video_info', info);
+  print('getVideoInfoPage-t5');
+
   return info;
 }
 
