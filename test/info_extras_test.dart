@@ -5,6 +5,7 @@ import 'package:get_youtube_info/get_youtube_info.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helper.dart';
+import 'test_helper.dart';
 
 assertURL(url) {
   expect(RegExp('^https?://').hasMatch(url), true, reason: 'Not a URL: ${url}');

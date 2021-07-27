@@ -26,7 +26,7 @@ class Cache {
       return map[key];
     } else {
       var value = fn();
-      map['key'] = value;
+      map[key] = value;
       try {
         await value;
       } catch (err) {

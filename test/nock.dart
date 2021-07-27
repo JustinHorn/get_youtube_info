@@ -5,6 +5,9 @@ import 'package:nock/nock.dart';
 
 import 'helper.dart';
 
+bool nock_nodeIsTruthy(dynamic value) =>
+    value != 0 && value != '' && value != false && value != null;
+
 const YT_HOST = 'https://www.youtube.com';
 const MANIFEST_HOST = 'https://manifest.googlevideo.com';
 const M3U8_HOST = 'https://manifest.googlevideo.com';
@@ -42,7 +45,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
       return;
     }
     var scope = nock(host);
-    if (nodeIsTruthy(nockOptions['filteringPath'])) {
+    if (nock_nodeIsTruthy(nockOptions['filteringPath'])) {
       /// TODO: implement filtertinPath!!!
       // print(nockOptions['filteringPath']);
       // scopeInterceptor = filteringPath(
@@ -57,7 +60,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
     var filepath = "$folder/${nockOptions['file']}";
     var reply =
         testOptions is List && testOptions.length >= 3 ? testOptions[2] : null;
-    if (!nodeIsTruthy(reply) || testOptions == true) {
+    if (!nock_nodeIsTruthy(reply) || testOptions == true) {
       var fileString = await getFileAsString(filepath);
       scopeInterceptor = scopeInterceptor..reply(statusCode, fileString);
     } else if (reply is String) {
@@ -75,7 +78,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
     scopes.add(scopeInterceptor);
   }
 
-  if (nodeIsTruthy(opts['watchJson'])) {
+  if (nock_nodeIsTruthy(opts['watchJson'])) {
     await addScope(YT_HOST, opts['watchJson'], {
       'path': '/watch',
       'query': r'^v=.+&pbj=1$',
@@ -83,7 +86,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
     });
   }
 
-  if (nodeIsTruthy(opts['watchHtml'])) {
+  if (nock_nodeIsTruthy(opts['watchHtml'])) {
     await addScope(YT_HOST, opts['watchHtml'], {
       'query': r'^v=.+&hl=en$',
       'path': '/watch',
@@ -91,7 +94,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
     });
   }
 
-  if (nodeIsTruthy(opts['dashmpd'])) {
+  if (nock_nodeIsTruthy(opts['dashmpd'])) {
     // addScope(MANIFEST_HOST, opts.dashmpd, {
     //   filteringPath: [() => '/api/manifest/dash/'],
     //   get: '/api/manifest/dash/',
@@ -99,7 +102,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
     // });
   }
 
-  if (nodeIsTruthy(opts['m3u8'])) {
+  if (nock_nodeIsTruthy(opts['m3u8'])) {
     await addScope(M3U8_HOST, opts['m3u8'], {
       // 'filteringPath': ['/api/manifest/hls_variant/'],
       'get': '/api/manifest/hls_variant/',
@@ -107,7 +110,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
     });
   }
 
-  if (nodeIsTruthy(opts['player'])) {
+  if (nock_nodeIsTruthy(opts['player'])) {
     await addScope(YT_HOST, opts['player'], {
       // 'filteringPath': [RegExp(r'/player.+$'), '/player.js'],
       'path': '/s/player.js',
@@ -116,7 +119,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
     });
   }
 
-  if (nodeIsTruthy(opts['embed'])) {
+  if (nock_nodeIsTruthy(opts['embed'])) {
     await addScope(YT_HOST, opts['embed'], {
       'query': 'hl=en',
       'path': '${EMBED_PATH + id}',
@@ -124,7 +127,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
     });
   }
 
-  if (nodeIsTruthy(opts['get_video_info'])) {
+  if (nock_nodeIsTruthy(opts['get_video_info'])) {
     await addScope(YT_HOST, opts['get_video_info'], {
       'query': r'video_id=([a-zA-Z0-9_-]+)&(.+)$',
       'path': '${INFO_PATH}video_id=$id',

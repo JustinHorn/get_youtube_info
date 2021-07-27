@@ -45,6 +45,14 @@ const AGE_RESTRICTED_URLS = [
   'youtube.com/t/community_guidelines',
 ];
 
+getBasicInfo(link, Map<String, dynamic> options) async {
+  var id = getVideoID(link);
+  var key = ['_getBasicInfo', id, options['lang']].join("-");
+
+  return InfoClass.cache
+      .getOrSet(key, () async => await _getBasicInfo(id, options));
+}
+
 ///
 /// Gets info from a video without getting additional formats.
 ///
@@ -52,7 +60,7 @@ const AGE_RESTRICTED_URLS = [
 ///@param {Object} options
 /// @returns {Promise<Object>}
 ///
-Future<dynamic> getBasicInfo(id, Map<String, dynamic> options) async {
+Future<dynamic> _getBasicInfo(id, Map<String, dynamic> options) async {
   final Map<String, dynamic> retryOptions = {
     'maxRetries': InfoClass.max_retries,
     ...options['requestOptions'] ?? {}

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-bool nodeIsTruthy(dynamic value) =>
+bool helper_nodeIsTruthy(dynamic value) =>
     value != 0 && value != '' && value != false && value != null;
 
 Future<String> getFileAsString(String path) async {
