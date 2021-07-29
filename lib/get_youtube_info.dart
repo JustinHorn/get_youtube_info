@@ -43,8 +43,11 @@ dynamic nodeOr(
 
 String nodeURL(String url, String base_url) {
   if (RegExp(r'(^/|^(?!h?t?t?p)\w|^\d)').hasMatch(url)) {
-    if (RegExp(r'^/').hasMatch(url)) return base_url + url.substring(1);
-    return base_url + url;
+    var uri = Uri.parse(base_url);
+
+    var base = uri.scheme + '://' + uri.host;
+    if (RegExp(r'^/').hasMatch(url)) return base + url;
+    return base + '/' + url;
   }
   return url;
 }

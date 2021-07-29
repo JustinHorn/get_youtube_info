@@ -45,12 +45,14 @@ const AGE_RESTRICTED_URLS = [
   'youtube.com/t/community_guidelines',
 ];
 
-getBasicInfo(link, Map<String, dynamic> options) async {
+Future<Map<String, dynamic>> getBasicInfo(
+    link, Map<String, dynamic> options) async {
   var id = getVideoID(link);
   var key = ['_getBasicInfo', id, options['lang']].join("-");
 
-  return InfoClass.cache
-      .getOrSet(key, () async => await _getBasicInfo(id, options));
+  return await InfoClass.cache.getOrSet(key, () async {
+    return await _getBasicInfo(id, options);
+  });
 }
 
 ///
@@ -60,7 +62,8 @@ getBasicInfo(link, Map<String, dynamic> options) async {
 ///@param {Object} options
 /// @returns {Promise<Object>}
 ///
-Future<dynamic> _getBasicInfo(id, Map<String, dynamic> options) async {
+Future<Map<String, dynamic>> _getBasicInfo(
+    id, Map<String, dynamic> options) async {
   final Map<String, dynamic> retryOptions = {
     'maxRetries': InfoClass.max_retries,
     ...options['requestOptions'] ?? {}
@@ -126,7 +129,7 @@ Future<dynamic> _getBasicInfo(id, Map<String, dynamic> options) async {
     ...additional
   }, info);
 
-  return info;
+  return Map<String, dynamic>.from(info);
 }
 
 privateVideoError(player_response) {
@@ -466,32 +469,40 @@ parseFormats(playerResponse) {
 /// @param {string} id
 /// @param {Object} options
 /// @returns {Promise<Object>}
-getInfo(id, options) async {
-  var info = await getBasicInfo(id, options);
-  final hasManifest = nodeOr(
+getInfo(id, Map<String, dynamic> options) async {
+  var info = await _getBasicInfo(id, options);
+  final hasManifest = nodeIsTruthy(nodeOr(
       info['player_response']?['streamingData']?['dashManifestUrl'],
-      info['player_response']?['streamingData']?['hlsManifestUrl']);
+      info['player_response']?['streamingData']?['hlsManifestUrl']));
 
   List<Future> funcs = [];
   if (info['formats'].length > 0) {
-    info['html5player'] = nodeOr(
-        nodeOr(info['html5player'],
-            getHTML5player(await getWatchHTMLPageBody(id, options))),
-        getHTML5player(await getEmbedPageBody(id, options)));
+    if (!nodeIsTruthy(info['html5player'])) {
+      info['html5player'] =
+          getHTML5player(await getWatchHTMLPageBody(id, options));
+    }
+
+    if (!nodeIsTruthy(info['html5player'])) {
+      info['html5player'] = getHTML5player(await getEmbedPageBody(id, options));
+    }
     if (!nodeIsTruthy(info['html5player'])) {
       throw 'Unable to find html5player file';
     }
     final html5player = nodeURL(info['html5player'], InfoClass.BASE_URL);
+
+    info['formats'] = List<Map<String, dynamic>>.from(info['formats']);
     funcs.add(decipherFormats(info['formats'], html5player, options));
   }
   if (hasManifest &&
-      info['player_response']['streamingData']['dashManifestUrl']) {
+      nodeIsTruthy(
+          info['player_response']['streamingData']['dashManifestUrl'])) {
     var url = info['player_response']?['streamingData']?['dashManifestUrl'];
     print('no dash manifest');
     // funcs.add(getDashManifest(url, options));
   }
   if (hasManifest &&
-      info['player_response']['streamingData']['hlsManifestUrl']) {
+      nodeIsTruthy(
+          info['player_response']['streamingData']['hlsManifestUrl'])) {
     var url = info['player_response']['streamingData']['hlsManifestUrl'];
     funcs.add(getM3U8(url, options));
   }

@@ -183,7 +183,7 @@ List<String>? extractActions(String body) {
 
 /// @param {Object} format
 /// @param {string} sig
-setDownloadURL(Map<String, dynamic> format, String sig) {
+setDownloadURL(Map<String, dynamic> format, String? sig) {
   var decodedUrl;
   if (format['url'] != null && format['url'] != '') {
     decodedUrl = format['url'];
@@ -205,11 +205,11 @@ setDownloadURL(Map<String, dynamic> format, String sig) {
   final queryParameters = {...parsedUrl.queryParameters};
   queryParameters.addAll({'ratebypass': 'yes'});
 
-  if (sig != '') {
+  if (nodeIsTruthy(sig)) {
     // When YouTube provides a `sp` parameter the signature `sig` must go
     // into the parameter it specifies.
     // See https://github.com/fent/node-ytdl-core/issues/417
-    queryParameters.addAll({(format['sp'] ?? 'signature'): sig});
+    queryParameters.addAll({(format['sp'] ?? 'signature'): sig!});
   }
 
   format['url'] =
@@ -228,13 +228,14 @@ Future<dynamic> decipherFormats(List<Map<String, dynamic>> formats,
   var tokens = await (getTokens(html5player, options) as Future<List<String>>);
   formats.forEach((format) {
     var cipher = format['signatureCipher'] ?? format['cipher'];
-    if (cipher) {
+    if (nodeIsTruthy(cipher)) {
       format.addAll(QueryString.parse(cipher));
       format.remove('signatureCipher');
       format.remove('cipher');
     }
-    final sig = format['s'] ? decipher(tokens, format['s']) : null;
-    setDownloadURL(format, sig!);
+    final sig =
+        nodeIsTruthy(format['s']) ? decipher(tokens, format['s']) : null;
+    setDownloadURL(format, sig);
     decipheredFormats[format['url']] = format;
   });
   return decipheredFormats;

@@ -26,36 +26,29 @@ main() async {
 
   nock.init();
 
-  var x = 'https://www.youtube.com/watch?v=_HSylqgVYQI&hl=en';
+  var x =
+      'https://www.youtube.com/s/player/62f90c99/player_ias.vflset/en_US/base.js';
   final id = '_HSylqgVYQI';
 
-  final scope = await nockFunction(id, 'regular', opts: {
-    'watchHtml': [
-      [true, 500],
-      [true, 200],
-    ],
-    'watchJson': false,
-    'get_video_info': false,
-    'player': false,
-  });
+  final scope = await nockFunction(id, 'live-now');
 
-  var response = await http.get(Uri.parse(x), headers: {'abc': 'fuckOff'});
+  var response = await http.get(Uri.parse(x));
 
   print(response);
 
   print(response.statusCode);
 
-  response = await http.get(Uri.parse(x), headers: {'abc': 'fuckOff'});
+  // response = await http.get(Uri.parse(x), headers: {'abc': 'fuckOff'});
 
-  print(response);
+  // print(response);
 
-  print(response.statusCode);
+  // print(response.statusCode);
 
-  response = await http.get(Uri.parse(x), headers: {'abc': 'fuckOff'});
+  // response = await http.get(Uri.parse(x), headers: {'abc': 'fuckOff'});
 
-  print(response);
+  // print(response);
 
-  print(response.statusCode);
+  // print(response.statusCode);
 
   scope.done();
 }

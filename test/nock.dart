@@ -105,7 +105,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
   if (nock_nodeIsTruthy(opts['m3u8'])) {
     await addScope(M3U8_HOST, opts['m3u8'], {
       // 'filteringPath': ['/api/manifest/hls_variant/'],
-      'get': '/api/manifest/hls_variant/',
+      'path': RegExp(r'/api/manifest/hls_variant/'),
       'file': 'hls-manifest.m3u8',
     });
   }
@@ -113,7 +113,7 @@ Future<NockFunctionReturn> nockFunction(id, type, {opts}) async {
   if (nock_nodeIsTruthy(opts['player'])) {
     await addScope(YT_HOST, opts['player'], {
       // 'filteringPath': [RegExp(r'/player.+$'), '/player.js'],
-      'path': '/s/player.js',
+      'path': RegExp(r'/player.*\.js$'),
       'file': existingFiles
           .firstWhere((f) => RegExp(r'(html5)?player.+\.js$').hasMatch(f)),
     });
