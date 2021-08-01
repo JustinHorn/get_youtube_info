@@ -255,7 +255,7 @@ List<Map<String, dynamic>> filterFormats(
 
 /// @param {Object} format
 /// @returns {Object}
-addFormatMeta(Map<String, dynamic> format) {
+Map<String, dynamic> addFormatMeta(Map<String, dynamic> format) {
   format = {...?FORMATS[format['itag']?.toString()], ...format};
   format['hasVideo'] = nodeIsTruthy(format['qualityLabel']);
   format['hasAudio'] = nodeIsTruthy(format['audioBitrate']);
@@ -273,9 +273,9 @@ addFormatMeta(Map<String, dynamic> format) {
       ? (format['codecs'] as String).split(', ').last
       : null;
   format['isLive'] =
-      RegExp('\bsource[/=]yt_live_broadcast\b').hasMatch(format['url']);
+      RegExp('\bsource[/=]yt_live_broadcast\b').hasMatch(format['url'] ?? '');
   format['isHLS'] =
-      RegExp('/manifest/hls_(variant|playlist)/').hasMatch(format['url']);
-  format['isDashMPD'] = RegExp('/manifest/dash/').hasMatch(format['url']);
+      RegExp('/manifest/hls_(variant|playlist)/').hasMatch(format['url'] ?? '');
+  format['isDashMPD'] = RegExp('/manifest/dash/').hasMatch(format['url'] ?? '');
   return format;
 }

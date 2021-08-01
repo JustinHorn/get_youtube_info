@@ -1,16 +1,3 @@
 # get_youtube_info
 
-A new Flutter package project.
-
-Package aiming to be a dart migration of ytdl-core
-
-## Getting Started
-
-This project is a starting point for a Dart
-[package](https://flutter.dev/developing-packages/),
-a library module containing code that can be shared easily across
-multiple Flutter or Dart projects.
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+A not finished and not perfect dart migration of [node-ytdl-core](https://github.com/fent/node-ytdl-core)

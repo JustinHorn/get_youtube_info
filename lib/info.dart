@@ -469,8 +469,8 @@ parseFormats(playerResponse) {
 /// @param {string} id
 /// @param {Object} options
 /// @returns {Promise<Object>}
-getInfo(id, Map<String, dynamic> options) async {
-  var info = await _getBasicInfo(id, options);
+Future<Map<String, dynamic>> getInfo(id, Map<String, dynamic> options) async {
+  var info = await getBasicInfo(id, options);
   final hasManifest = nodeIsTruthy(nodeOr(
       info['player_response']?['streamingData']?['dashManifestUrl'],
       info['player_response']?['streamingData']?['hlsManifestUrl']));
@@ -508,10 +508,17 @@ getInfo(id, Map<String, dynamic> options) async {
   }
 
   var results = await Future.wait(funcs);
-  info['formats'] = [...results];
-  info['formats'] = info['formats'].map(addFormatMeta);
+  info['formats'] =
+      [...results].map((e) => Map<String, dynamic>.from(e)).toList();
+  info['formats'] = (info['formats'] as List<Map<String, dynamic>>)
+      .map(addFormatMeta)
+      .toList();
   info['formats'].sort(sortFormats);
   info['full'] = true;
+
+//
+
+//
   return info;
 }
 
